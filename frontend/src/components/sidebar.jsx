@@ -1,11 +1,32 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { CSSTransition } from "react-transition-group";
 import { useNavigate } from 'react-router-dom';
 import { SidebarClose } from 'lucide-react';
+import { Sidenav, Nav } from 'rsuite';
 import "./header.css";
+
 
 const Sidebar = ({ showSidebar, toggleSidebar, theme }) => {
     const navigate = useNavigate();
+
+
+
+    const stati = [
+        { title: "Attivi" },
+        { title: "In Svolgimento" },
+        { title: "Programmabili" },
+        { title: "Accettabili" },
+        { title: "Chiusi" }
+    ];
+
+    const tipi = [
+        { title: "Incidenti" },
+        { title: "Richieste di Servizio" },
+        { title: "Problemi" },
+        { title: "Cambiamenti" },
+        { title: "Conoscenza" }
+    ];
+
     return (
         <>
             <CSSTransition
@@ -14,22 +35,36 @@ const Sidebar = ({ showSidebar, toggleSidebar, theme }) => {
                 classNames="fade"
                 unmountOnExit
             >
-                <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 ${!showSidebar ? 'min-w-0' : ''}`} onClick={toggleSidebar}>
-                    <div className={`${theme === 'dark' ? 'bg-neutral-900' : 'bg-white'} fixed left-0 top-0 h-full w-80 shadow-lg z-50 p-4 flex flex-col`}>
-                        <button className={`${theme === 'dark' ? 'hover:bg-neutral-700' : 'hover:bg-neutral-300'} ml-2 p-2 rounded-full self-start`}>
+                <div className={`fixed pl-80 inset-0 bg-black bg-opacity-50 z-40 ${!showSidebar ? 'min-w-0' : ''}`} >
+
+                    <div className={`${theme === 'dark' ? 'bg-neutral-900' : 'bg-white'} 
+                        fixed left-0 top-0 h-full w-80 shadow-lg z-35 p-4 flex flex-col 
+                        overflow-y-auto scroll-m-0`}>
+
+
+                        <button onClick={toggleSidebar} className={`${theme === 'dark' ? 'hover:bg-neutral-700' : 'hover:bg-neutral-300'} ml-2 p-2 rounded-full self-start`}>
                             <SidebarClose className={`${theme === 'dark' ? 'text-white' : 'text-black'}`} size={30} />
                         </button>
+
                         <div className="flex-grow flex flex-col justify-center items-center">
-                            <ul className="space-y-4 flex flex-col items-center">
-                                <li className="cursor-pointer" onClick={() => navigate('/home')}>Home</li>
-                                <li className="cursor-pointer" onClick={() => navigate('/products')}>Products</li>
-                                <li className="cursor-pointer" onClick={() => navigate('/about')}>About</li>
-                                <li className="cursor-pointer" onClick={() => navigate('/contact')}>Contact</li>
-                            </ul>
+                            <Sidenav>
+                                <Sidenav.Body>
+                                    <Nav>
+                                        {stati.map((item, index) => (
+                                            <Nav.Menu eventKey={index} title={item.title} >
+
+                                                {tipi.map((item, index) => (
+                                                    <Nav.Item eventKey={`3-${index}`}>{item.title}</Nav.Item>), [tipi])}
+
+                                            </Nav.Menu>), [stati])}
+
+                                    </Nav>
+                                </Sidenav.Body>
+                            </Sidenav>
                         </div>
                     </div>
                 </div>
-            </CSSTransition>
+            </CSSTransition >
         </>
     );
 };

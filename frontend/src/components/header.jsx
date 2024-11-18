@@ -3,7 +3,6 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { Moon, Sun } from 'lucide-react';
 import { IconUserCircle, IconShoppingCart, IconLogin, IconLogout, IconShield } from '@tabler/icons-react';
 
-
 export const Header = ({ theme, toggleTheme }) => {
     const navigate = useNavigate();
     const [hovered, setHovered] = useState(false);

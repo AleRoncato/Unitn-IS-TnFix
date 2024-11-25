@@ -2,20 +2,13 @@ import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { CrossIcon, Moon, SidebarClose, Sun } from "lucide-react";
 import {
-  IconUserCircle,
-  IconShoppingCart,
-  IconLogin,
   IconLogout,
-  IconShield,
-  IconBurger,
   IconLayoutSidebar,
 } from "@tabler/icons-react";
 import Sidebar from "./sidebar";
 
 export const Header = ({ theme, toggleTheme }) => {
   const navigate = useNavigate();
-  const [hovered, setHovered] = useState(false);
-
   const [showSidebar, setShowSidebar] = useState(false);
 
   const toggleSidebar = () => {
@@ -26,21 +19,19 @@ export const Header = ({ theme, toggleTheme }) => {
     <div>
       <header
         id="outer-container page-wrap"
-        className={`${
-          theme === "dark"
-            ? "bg-neutral-900 text-white"
-            : "bg-white text-neutral-900"
-        } py-4 px-6 shadow-md top-0 left-0 w-full z-50`}
+        className={`${theme === "dark"
+          ? "bg-neutral-900 text-white"
+          : "bg-neutral-100 text-neutral-900"
+          } py-4 px-6 shadow-md top-0 left-0 w-full z-50`}
       >
         <nav className="flex justify-between items-center">
           <div className="flex items-center">
             <button
               onClick={toggleSidebar}
-              className={`${
-                theme === "dark"
-                  ? "hover:bg-neutral-700"
-                  : "hover:bg-neutral-300"
-              } p-2 rounded-full`}
+              className={`${theme === "dark"
+                ? "hover:bg-neutral-700"
+                : "hover:bg-neutral-300"
+                } p-2 rounded-full`}
             >
               <IconLayoutSidebar
                 className={`${theme === "dark" ? "text-white" : "text-black"}`}
@@ -65,24 +56,19 @@ export const Header = ({ theme, toggleTheme }) => {
           <ul className="flex space-x-6 items-center">
             <li style={{ marginLeft: "10px" }}>
               <div
-                onMouseEnter={() => setHovered(true)}
-                onMouseLeave={() => setHovered(false)}
-                onClick={() => {}}
+                onClick={() => { }}
                 className="mr-2 cursor-pointer flex flex-col items-center relative group"
               >
-                <>
-                  <IconLogout
-                    size={30}
-                    stroke={1.2}
-                    color={`${
-                      hovered ? "red" : theme === "dark" ? "white" : "black"
+
+                <IconLogout
+                  size={30}
+                  className={`${theme === "dark" ? "white hover:text-red-400" : "black hover:text-red-500"
                     }`}
-                    className="hover:text-red-500"
-                  />
-                  <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Logout
-                  </div>
-                </>
+                />
+                <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Logout
+                </div>
+
               </div>
             </li>
             <li>
@@ -91,9 +77,9 @@ export const Header = ({ theme, toggleTheme }) => {
                 className="p-2 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700"
               >
                 {theme === "dark" ? (
-                  <Sun className="text-yellow-500" size={24} />
+                  <Sun className="hover:text-yellow-500" size={24} />
                 ) : (
-                  <Moon className="text-neutral-500" size={24} />
+                  <Moon className="hover:text-neutral-300 " size={24} />
                 )}
               </button>
             </li>

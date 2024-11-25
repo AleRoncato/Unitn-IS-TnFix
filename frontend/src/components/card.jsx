@@ -1,14 +1,11 @@
 import React from "react";
-import PropTypes from "prop-types";
-import { useNavigate } from "react-router-dom";
 
 const Card = ({ theme, data }) => {
-  const navigate = useNavigate();
 
   return (
-    <div className="bg-black">
-      <h2 className="text-xl font-bold">{data.title}</h2>
-      <p>{data.description}</p>
+    <div className={`${theme === "dark" ? "bg-neutral-900" : "bg-white"} `} >
+      <h2 className={`${theme === "dark" ? "text-white" : "text-black"} text-xl font-bold"`}>{data.title}</h2>
+      <p className={`${theme === "dark" ? "text-neutral-600" : "text-neutral-400"}`}>{data.description}</p>
     </div>
   );
 };

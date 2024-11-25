@@ -10,7 +10,6 @@ export const Home = ({ theme, toggleTheme }) => {
           <Header theme={theme} toggleTheme={toggleTheme} />
         </div>
         <div>
-          {" "}
           <Card
             theme={theme}
             data={{ title: "Card Title", description: "Card Description" }}

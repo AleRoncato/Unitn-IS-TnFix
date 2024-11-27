@@ -10,7 +10,7 @@ import { AuthProvider } from "./utils/AuthProvider";
 import "./App.css";
 
 function App() {
-  // const [count, setCount] = useState(0)
+
 
   const [theme, setTheme] = useState("dark");
 

@@ -3,7 +3,7 @@ const app = express();
 
 require('dotenv').config()
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
 
@@ -88,7 +88,7 @@ app.listen(port, () => {
 const mongoose = require('mongoose');
 
 // Connetti a MongoDB (senza opzioni deprecate)
-mongoose.connect(DB)
+mongoose.connect('mongodb+srv://admin:kCIF2rchfpBYaeZs@tnfix.o6j1e.mongodb.net/?retryWrites=true&w=majority&appName=TNFIX')
   .then(() => console.log('Connesso a MongoDB'))
   .catch((error) => console.error('Errore nella connessione a MongoDB:', error));
 

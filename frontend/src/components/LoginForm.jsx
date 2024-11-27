@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "../utils/AuthProvider";
 
 const LoginForm = () => {
     const { login } = useAuth();
@@ -22,7 +22,6 @@ const LoginForm = () => {
         }
 
         validatePassword();
-        console.log("Password: ", password);
     }, [password]);
 
 
@@ -34,7 +33,6 @@ const LoginForm = () => {
         }
 
         validateEmail();
-        console.log("Password: ", password);
     }, [email]);
 
     const validateEmail = () => {
@@ -61,8 +59,7 @@ const LoginForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateEmail() && validatePassword()) {
-            console.log("Login successful");
-            login("dummyToken");
+            login(password);
             navigate("/home");
         }
     };
@@ -74,7 +71,7 @@ const LoginForm = () => {
                 </div>
                 <div className="my-4 text-left">
                     <form onSubmit={handleSubmit}>
-                    {/* ${emailError ? 'text-red-500' : ''} */}
+                        {/* ${emailError ? 'text-red-500' : ''} */}
                         <div className={`mb-4 `}>
                             <label className="block text-sm font-medium mb-2">Email</label>
                             <input

@@ -5,8 +5,8 @@ import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Home } from "./pages";
 import LoginForm from "./components/LoginForm";
-import PrivateRoutes from "./components/privateRoutes";
-import { AuthProvider } from "./components/AuthProvider";
+import PrivateRoutes from "./utils/privateRoutes";
+import { AuthProvider } from "./utils/AuthProvider";
 import "./App.css";
 
 function App() {

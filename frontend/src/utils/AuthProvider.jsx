@@ -2,19 +2,24 @@ import React, { createContext, useContext, useState } from "react";
 
 const AuthContext = createContext();
 
-
 export const AuthProvider = ({ children }) => {
-    const [token, setToken] = useState(null);
+    const [token, setToken] = useState(localStorage.getItem("user"));
 
-    const login = (userToken) => {
-        setToken(userToken);
+    const login = (token) => {
+
+        //THIS SHOULD FETCH THE TOKEN FROM THE BACKEND
+        
+        setToken(token);
+        localStorage.setItem("user", token);
     };
 
     const logout = () => {
         setToken(null);
+        localStorage.removeItem("user");
     };
-    
+
     const isAuthenticated = !!token;
+
     return (
         <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
             {children}
@@ -23,9 +28,5 @@ export const AuthProvider = ({ children }) => {
 };
 
 export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
+    return useContext(AuthContext);
 };

@@ -5,14 +5,25 @@ import {
   IconLogout,
   IconLayoutSidebar,
 } from "@tabler/icons-react";
+import { useAuth } from "../utils/AuthProvider";
 import Sidebar from "./sidebar";
 
 export const Header = ({ theme, toggleTheme }) => {
+
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
 
   const toggleSidebar = () => {
     setShowSidebar((prev) => !prev);
+  };
+
+  const handleLogout = () => {
+
+    console.log("logout");
+    logout();
+    navigate("/login");
+
   };
 
   return (
@@ -47,20 +58,21 @@ export const Header = ({ theme, toggleTheme }) => {
           />
 
           <div
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/home")}
             className="space-x-6 text-2xl font-bold text-gold cursor-pointer"
           >
             TN FIX
           </div>
 
           <ul className="flex space-x-6 items-center">
-            <li style={{ marginLeft: "10px" }}>
+            <li style={{ marginLeft: "10px" }} onClick={handleLogout}>
               <div
-                onClick={() => { }}
+
                 className="mr-2 cursor-pointer flex flex-col items-center relative group"
               >
 
                 <IconLogout
+
                   size={30}
                   className={`${theme === "dark" ? "white hover:text-red-400" : "black hover:text-red-500"
                     }`}
@@ -88,6 +100,6 @@ export const Header = ({ theme, toggleTheme }) => {
       </header>
       <Outlet />
       {/* Importante perche senza outlet non carica i nodi figlio del padre (sicconme questa page è children di Header [come tutta la app]) */}
-    </div>
+    </div >
   );
 };

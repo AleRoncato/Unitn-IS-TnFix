@@ -88,7 +88,7 @@ app.listen(port, () => {
 const mongoose = require('mongoose');
 
 // Connetti a MongoDB (senza opzioni deprecate)
-mongoose.connect('mongodb+srv://admin:kCIF2rchfpBYaeZs@tnfix.o6j1e.mongodb.net/?retryWrites=true&w=majority&appName=TNFIX')
+mongoose.connect(DB)
   .then(() => console.log('Connesso a MongoDB'))
   .catch((error) => console.error('Errore nella connessione a MongoDB:', error));
 

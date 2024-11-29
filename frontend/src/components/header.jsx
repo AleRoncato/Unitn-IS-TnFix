@@ -48,7 +48,7 @@ export const Header = ({ theme, toggleTheme }) => {
               />
             </button>
           </div>
-
+  
           <Sidebar
             showSidebar={showSidebar}
             toggleSidebar={toggleSidebar}

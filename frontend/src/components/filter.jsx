@@ -7,19 +7,19 @@ const Filter = ({ theme }) => {
 
     const [isVisible, setIsVisible] = useState([]);
 
-    useEffect(() => {
-        const fetchItems = async () => {
-            try {
-                const response = await fetch('https://api.example.com/items');
-                const data = await response.json();
-                setFetchedItems(data);
-            } catch (error) {
-                console.error('Error fetching items:', error);
-            }
-        };
+    // useEffect(() => {
+    //     const fetchItems = async () => {
+    //         try {
+    //             const response = await fetch('https://api.example.com/items');
+    //             const data = await response.json();
+    //             setFetchedItems(data);
+    //         } catch (error) {
+    //             console.error('Error fetching items:', error);
+    //         }
+    //     };
 
-        fetchItems();
-    }, []);
+    //     fetchItems();
+    // }, []);
 
     useEffect(() => {
         setIsVisible(fetchedItems.map(() => false));

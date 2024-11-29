@@ -59,7 +59,7 @@ const LoginForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateEmail() && validatePassword()) {
-            login(password);
+            login(email, password);
             navigate("/home");
         }
     };

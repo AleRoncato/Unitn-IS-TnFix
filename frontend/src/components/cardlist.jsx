@@ -21,20 +21,29 @@ const CardList = ({ cards }) => {
 
     return (
         <>
-            <div className="card-list bg-neutral-700 h-full">
+            <div className="h-full mx-12 my-2">
                 {cards.map((card, index) => (
                     <div
                         key={index}
-                        className={`card ${hoveredCardIndex === index ? 'hovered' : ''} text-black`}
+                        className={`bg-[#F2E9E4] ring-1 ring-black/5 
+                            backdrop-filter backdrop-blur-xl
+                            text-neutral-900 p-4 m-2 rounded-2xl cursor-pointer my-2.5`}
                         onClick={() => handleCardClick(index)}
                     >
-                        <h2>{card.title}</h2>
-                        <p>{card.description}</p>
+                        <div className="flex flex-col">
+                            <h2 className="text-xl font-bold">{card.title}</h2>
+                            <p className="text-sm">{card.type}</p>
+                        </div>
+                        <p className="text-sm">{card.description}</p>
+                        <p className="text-sm">{card.location}</p>
+                        <p className="text-sm">{card.date}</p>
                     </div>
                 ))}
             </div>
 
-            <Card_hover visible={visible} data={cards[hoveredCardIndex]} toggleVisibility={closeHoverCard} />
+            {hoveredCardIndex !== null && (
+                <Card_hover visible={visible} data={cards[hoveredCardIndex]} toggleVisibility={closeHoverCard} />
+            )}
         </>
     );
 };

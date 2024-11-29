@@ -4,9 +4,10 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Home } from "./pages";
-import LoginForm from "./components/LoginForm";
+import LoginForm from "./pages/LoginForm";
 import PrivateRoutes from "./utils/privateRoutes";
 import { AuthProvider } from "./utils/AuthProvider";
+import AddPage from "./pages/addPage";
 import "./App.css";
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route element={<PrivateRoutes />}>
             {" "}
             <Route path="/home" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
+            <Route path="/add-ticket" element={<AddPage theme={theme} toggleTheme={toggleTheme} />} />
           </Route>
           <Route path="/" element={<LoginForm />} />
           <Route path="/login" element={<LoginForm />} />

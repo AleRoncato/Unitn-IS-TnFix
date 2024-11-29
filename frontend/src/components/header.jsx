@@ -1,10 +1,6 @@
 import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { CrossIcon, Moon, SidebarClose, Sun } from "lucide-react";
-import {
-  IconLogout,
-  IconLayoutSidebar,
-} from "@tabler/icons-react";
+import { CrossIcon, LogOut, Moon, Plus, SidebarClose, SidebarIcon, Sun } from "lucide-react";
 import { useAuth } from "../utils/AuthProvider";
 import Sidebar from "./sidebar";
 
@@ -35,20 +31,44 @@ export const Header = ({ theme, toggleTheme }) => {
       >
         <nav className="flex items-center justify-between w-full">
           <div className="left flex items-center space-x-6">
-            <button
-              onClick={toggleSidebar}
-              className={`${theme === "dark"
-                ? "hover:bg-neutral-700"
-                : "hover:bg-neutral-300"
-                } p-2 rounded-full`}
-            >
-              <IconLayoutSidebar
-                className={`${theme === "dark" ? "text-white" : "text-black"}`}
-                size={30}
-              />
-            </button>
+
+            <ul className="flex space-x-6 items-center">
+              <li onClick={toggleSidebar}
+                className={`${theme === "dark"
+                  ? "hover:bg-neutral-700"
+                  : "hover:bg-neutral-300"
+                  } p-2 rounded-full`}>
+                <div
+                  className="cursor-pointer flex flex-col items-center relative group"
+                >
+                  <SidebarIcon
+                    className={`${theme === "dark" ? "text-white" : "text-black"}`}
+                    size={28}
+                  />
+
+                </div>
+
+              </li>
+              <li onClick={() => navigate("/add-ticket")}
+                className={`${theme === "dark"
+                  ? "hover:bg-neutral-700"
+                  : "hover:bg-neutral-300"
+                  } p-2 rounded-full`}>
+                <div
+                  className="cursor-pointer flex flex-col items-center relative group"
+                >
+                  <Plus
+                    className={`${theme === "dark" ? "text-white" : "text-black"}`}
+                    size={30}
+                  />
+                </div>
+                <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  Logout
+                </div>
+              </li>
+            </ul>
           </div>
-  
+
           <Sidebar
             showSidebar={showSidebar}
             toggleSidebar={toggleSidebar}
@@ -57,21 +77,20 @@ export const Header = ({ theme, toggleTheme }) => {
 
           <div
             onClick={() => navigate("/home")}
-            className=" pl-12 center space-x-6 text-2xl font-bold text-gold cursor-pointer"
+            className="center space-x-6 text-2xl font-bold text-gold cursor-pointer"
           >
             TN FIX
           </div>
 
           <div className="right flex items-center space-x-6">
             <ul className="flex space-x-6 items-center">
-              <li style={{ marginLeft: "10px" }} onClick={handleLogout}>
+              <li className={`ml-2`} onClick={handleLogout}>
                 <div
                   className="mr-2 cursor-pointer flex flex-col items-center relative group"
                 >
-                  <IconLogout
-                    size={30}
-                    className={`${theme === "dark" ? "white hover:text-red-400" : "black hover:text-red-500"
-                      }`}
+                  <LogOut
+                    size={24}
+                    className={`${theme === "dark" ? "white hover:text-red-400" : "black hover:text-red-500"}`}
                   />
                   <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     Logout

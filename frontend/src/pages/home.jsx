@@ -1,6 +1,6 @@
 import React from "react";
 import { Header } from "../components";
-import Card from "../components/card";
+import CardList from "../components/cardlist";
 
 export const Home = ({ theme, toggleTheme }) => {
   return (
@@ -8,12 +8,12 @@ export const Home = ({ theme, toggleTheme }) => {
       <div className="flex-col ">
         <div>
           <Header theme={theme} toggleTheme={toggleTheme} />
-        </div>
-        <div>
-          <Card
-            theme={theme}
-            data={{ title: "Card Title", description: "Card Description" }}
-          />
+          <CardList cards={[
+            { id: 1, title: "Card 1", content: "This is the first card" },
+            { id: 2, title: "Card 2", content: "This is the second card" },
+            { id: 3, title: "Card 3", content: "This is the third card" },
+          ]} />
+
         </div>
       </div>
     </>

@@ -1,13 +1,16 @@
 // prima pagina che viene caricata
 //contiene routing, returna le pagione HTML, ecc
 
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { useState } from "react";
-import "./App.css";
+import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Home } from "./pages";
+import LoginForm from "./components/LoginForm";
+import PrivateRoutes from "./utils/privateRoutes";
+import { AuthProvider } from "./utils/AuthProvider";
+import "./App.css";
 
 function App() {
-  // const [count, setCount] = useState(0)
+
 
   const [theme, setTheme] = useState("dark");
 
@@ -15,18 +18,21 @@ function App() {
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
-  const router = createBrowserRouter([
-    //per il routing, in router ci salvo tutte le pagine della web app (URL)
-    {
-      path: "/",
-      element: <Home theme={theme} toggleTheme={toggleTheme} />,
-      children: [],
-    },
-  ]);
 
   return (
-    // returna il codice HTML
-    <RouterProvider router={router} />
+    <Router>
+      <AuthProvider>
+        {" "}
+        <Routes>
+          <Route element={<PrivateRoutes />}>
+            {" "}
+            <Route path="/home" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
+          </Route>
+          <Route path="/" element={<LoginForm />} />
+          <Route path="/login" element={<LoginForm />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
 

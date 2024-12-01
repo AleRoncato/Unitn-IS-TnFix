@@ -2,4 +2,4 @@ export * from "./header.jsx"   //esporta tutte le componenti di components, dent
 export * from "./card-hover.jsx"
 export * from "./cardlist.jsx"
 export * from "./sidebar.jsx"
-export * from "./card.jsx"
+export * from "./ticket-controls.jsx"

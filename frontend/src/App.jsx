@@ -4,7 +4,7 @@
 import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import { Home } from "./pages";
-import LoginForm from "./pages/LoginForm";
+import LoginForm from "./pages/login";
 import PrivateRoutes from "./utils/privateRoutes";
 import { AuthProvider } from "./utils/AuthProvider";
 import AddPage from "./pages/addPage";

@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import Card_hover from './card-hover';
 
-const CardList = ({ cards }) => {
+const CardList = () => {
     const [hoveredCardIndex, setHoveredCardIndex] = useState(null);
     const [visible, setVisible] = useState(false);
+
+    const cards = [
+        { id: 1, title: "React Hooks", type: "Webinar", description: "Master the use of hooks in React.", location: "Online", startdate: "2023-10-20", endate: "", status: "Pending" },
+        { id: 2, title: "React Hooks", type: "Webinar", description: "Master the use of hooks in React.", location: "Online", startdate: "2023-10-20", endate: "2023-10-20", status: "Pending" },
+        { id: 7, title: "React Hooks", type: "Webinar", description: "Master the use of hooks in React.", location: "Online", startdate: "2023-10-20", endate: "2023-10-20", status: "Pending" }
+    ];
+
+    const [data, setData] = useState(cards);
+
 
     const handleCardClick = (index) => {
         setHoveredCardIndex((prev) => prev === index ? null : index);
@@ -22,7 +31,7 @@ const CardList = ({ cards }) => {
     return (
         <>
             <div className="h-full mx-12 my-2">
-                {cards.map((card, index) => (
+                {data.map((card, index) => (
                     <div
                         key={index}
                         className={`bg-[#F2E9E4] ring-1 ring-black/5 
@@ -36,13 +45,13 @@ const CardList = ({ cards }) => {
                         </div>
                         <p className="text-sm">{card.description}</p>
                         <p className="text-sm">{card.location}</p>
-                        <p className="text-sm">{card.date}</p>
+                        <p className="text-sm">{card.status}</p>
                     </div>
                 ))}
             </div>
 
             {hoveredCardIndex !== null && (
-                <Card_hover visible={visible} data={cards[hoveredCardIndex]} toggleVisibility={closeHoverCard} />
+                <Card_hover datas={data} index={hoveredCardIndex} setData={setData} visible={visible} toggleVisibility={closeHoverCard} />
             )}
         </>
     );

@@ -26,29 +26,30 @@ const Sidebar = ({ showSidebar, toggleSidebar, theme }) => {
     }
   };
 
-
   return (
     <>
-
       <div
         onClick={handleOutsideClick}
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-700 ${showSidebar ? "opacity-100 w-full" : "opacity-0 w-0"} `}
+        className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-700 ${
+          showSidebar ? "opacity-100 w-full" : "opacity-0 w-0"
+        } `}
       >
         <div
           className={`${theme === "dark" ? "bg-neutral-900" : "bg-white"} 
                         fixed left-0 top-0 h-full w-96 shadow-lg z-35 p-4 flex flex-col 
-                        overflow-y-auto scroll-m-0 transition-transform duration-700 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}
+                        overflow-y-auto scroll-m-0 transition-transform duration-700 ${
+                          showSidebar ? "translate-x-0" : "-translate-x-full"
+                        }`}
         >
           <button
             onClick={toggleSidebar}
-            className={`${theme === "dark"
-              ? "hover:bg-neutral-700"
-              : "hover:bg-neutral-300"
-              } ml-2 p-2 rounded-full self-start`}
+            className={`${
+              theme === "dark" ? "hover:bg-neutral-700" : "hover:bg-neutral-300"
+            } ml-2 p-2 rounded-full self-start`}
           >
             <SidebarClose
               className={`${theme === "dark" ? "text-white" : "text-black"}`}
-              size={30}
+              size={32}
             />
           </button>
 
@@ -57,7 +58,6 @@ const Sidebar = ({ showSidebar, toggleSidebar, theme }) => {
           </div>
         </div>
       </div>
-
 
       <Outlet />
     </>

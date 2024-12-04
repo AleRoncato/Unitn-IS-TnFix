@@ -1,6 +1,10 @@
 const express = require('express');
 const app = express();
 
+const cors = require('cors');
+
+
+
 require('dotenv').config()
 
 const port = process.env.PORT || 5000;
@@ -13,6 +17,8 @@ app.use(express.json());
 app.listen(port, () => {
   console.log(`Server in esecuzione su http://localhost:${port}`);
 });
+
+app.use(cors({origin: 'http://localhost:5173'}));
 
 // const swaggerJsDoc = require('swagger-jsdoc');
 // const swaggerUi = require('swagger-ui-express');

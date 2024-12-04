@@ -3,6 +3,9 @@ import { Outlet, useNavigate } from "react-router-dom";
 import { CrossIcon, LogOut, Moon, Plus, SidebarClose, SidebarIcon, Sun } from "lucide-react";
 import { useAuth } from "../utils/AuthProvider";
 import Sidebar from "./sidebar";
+import logo from "../assets/logo-no-background.svg";
+
+
 
 export const Header = ({ theme, toggleTheme }) => {
 
@@ -79,7 +82,7 @@ export const Header = ({ theme, toggleTheme }) => {
             onClick={() => navigate("/home")}
             className="center space-x-6 text-2xl font-bold text-gold cursor-pointer"
           >
-            TN FIX
+            <img src={logo} alt="" />
           </div>
 
           <div className="right flex items-center space-x-6">

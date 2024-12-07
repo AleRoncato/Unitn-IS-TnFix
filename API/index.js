@@ -1,17 +1,12 @@
 const express = require('express');
 const app = express();
-
 const cors = require('cors');
-
-
 
 require('dotenv').config()
 
 const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
-
-
 
 app.use(express.json());
 app.listen(port, () => {
@@ -180,7 +175,7 @@ const TicketInfo = require('./models/TicketInfo');
 
 // Creazione di un nuovo ticket
 app.post('/tickets', authenticateToken, async (req, res) => {
-  const { title, subject, location, description, photos } = req.body;
+  const { title, type, building, floor,room, description, image } = req.body;
 
   try {
 
@@ -188,10 +183,12 @@ app.post('/tickets', authenticateToken, async (req, res) => {
     const newTicket = new Ticket({
       user: req.user.userId, // Associa il ticket all'utente autenticato
       title,
-      subject,
-      location,
+      type,
+      building,
+      floor,
+      room,
       description,
-      photos
+      image
     });
 
     //SAVES IT 

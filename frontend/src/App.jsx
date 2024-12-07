@@ -1,13 +1,13 @@
-// prima pagina che viene caricata
-//contiene routing, returna le pagione HTML, ecc
-
 import React, { useState } from "react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import { Home } from "./pages";
-import LoginForm from "./pages/login";
+
 import PrivateRoutes from "./utils/privateRoutes";
 import { AuthProvider } from "./utils/AuthProvider";
+
+import { Home } from "./pages";
+import LoginForm from "./pages/login";
 import AddPage from "./pages/addPage";
+
 import "./App.css";
 
 function App() {
@@ -23,15 +23,14 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        {" "}
         <Routes>
+          <Route path="/" element={<LoginForm />} />
+          <Route path="/login" element={<LoginForm />} />
           <Route element={<PrivateRoutes />}>
-            {" "}
             <Route path="/home" element={<Home theme={theme} toggleTheme={toggleTheme} />} />
             <Route path="/add-ticket" element={<AddPage theme={theme} toggleTheme={toggleTheme} />} />
           </Route>
-          <Route path="/" element={<LoginForm />} />
-          <Route path="/login" element={<LoginForm />} />
+          <Route path="*" element={<h1 className="fixed h-[100vh] w-full text-black bg-white flex justify-center items-center"> <p>Not Found</p></h1>} />
         </Routes>
       </AuthProvider>
     </Router>

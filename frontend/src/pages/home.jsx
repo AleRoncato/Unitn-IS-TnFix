@@ -6,12 +6,11 @@ export const Home = ({ theme, toggleTheme }) => {
   return (
     <>
       <div className="flex-col ">
-        <div>
-          <Header theme={theme} toggleTheme={toggleTheme} />
 
-          {/* must get the data from an API Call */}
-          <CardList />
-        </div>
+        <Header theme={theme} toggleTheme={toggleTheme} />
+
+        <CardList />
+
       </div>
     </>
   );

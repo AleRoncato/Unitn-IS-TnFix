@@ -27,50 +27,48 @@ const FilterCardComponent = ({ cards, setData }) => {
 
 
     return (
-        <div className='text-black'>
+        <div className='text-black h-full flex flex-col justify-around items-center'>
             <input
                 type="text"
                 placeholder="Filter by title"
                 value={filter}
                 onChange={handleTitleChange}
             />
-            <div>
-                <label>
-                    Start date:
-                    <input type="date" />
-                </label>
-                <label>
-                    End date:
-                    <input type="date" />
-                </label>
-                <label>
-                    Status:
-                    <select>
-                        <option value="">Select status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
-                    </select>
-                </label>
-                <label>
-                    Location:
-                    <select onChange={handleLocationChange}>
-                        <option className='text-neutral-500' value="">Select Location</option>
-                        <option value="active">POVO 2</option>
-                        <option value="inactive">SCUOLA ECCHER</option>
-                        <option value="inactive">UFFICIO TRANSPORTI</option>
-                    </select>
-                </label>
-                {location && <label>
-                    Zone:
-                    <select onChange={handleZoneChange}>
-                        <option className='text-neutral-500' value="">Select Location</option>
-                        <option value="active">POVO 2</option>
-                        <option value="inactive">SCUOLA ECCHER</option>
-                        <option value="inactive">UFFICIO TRANSPORTI</option>
-                    </select>
-                </label>}
 
-            </div>
+            <label>
+                Start date:
+                <input type="date" />
+            </label>
+            <label>
+                End date:
+                <input type="date" />
+            </label>
+            <label>
+                Status:
+                <select>
+                    <option value="">Select status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </label>
+            <label>
+                Location:
+                <select onChange={handleLocationChange}>
+                    <option className='text-neutral-500' value="">Select Location</option>
+                    <option value="active">POVO 2</option>
+                    <option value="inactive">SCUOLA ECCHER</option>
+                    <option value="inactive">UFFICIO TRANSPORTI</option>
+                </select>
+            </label>
+            {location && <label>
+                Zone:
+                <select onChange={handleZoneChange}>
+                    <option className='text-neutral-500' value="">Select Location</option>
+                    <option value="active">POVO 2</option>
+                    <option value="inactive">SCUOLA ECCHER</option>
+                    <option value="inactive">UFFICIO TRANSPORTI</option>
+                </select>
+            </label>}
 
         </div>
     );

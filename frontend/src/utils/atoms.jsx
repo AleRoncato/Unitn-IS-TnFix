@@ -1,4 +1,8 @@
 import { atom } from "jotai";
 
-export default theme = atom("dark");
+const theme = atom("dark");
+
+const addPage = atom(false);
+
+export { theme, addPage };
 

@@ -12,6 +12,8 @@ import {
 import { useAuth } from "../utils/AuthProvider";
 import Sidebar from "./sidebar";
 import logo from "../assets/logo-no-background.svg";
+import logo_wh from "../assets/logo-black.svg";
+
 
 
 
@@ -19,6 +21,7 @@ export const Header = ({ theme, toggleTheme }) => {
   const { logout } = useAuth();
   const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(false);
+
 
   const toggleSidebar = () => {
     setShowSidebar((prev) => !prev);
@@ -33,52 +36,46 @@ export const Header = ({ theme, toggleTheme }) => {
     <div>
       <header
         id="outer-container page-wrap"
-        className={`${
-          theme === "dark"
-            ? "bg-neutral-900 text-white"
-            : "bg-neutral-100 text-neutral-900"
-        } py-4 px-6 shadow-md top-0 left-0 w-full z-50`}
+        className={`${theme === "dark"
+          ? "bg-neutral-900 text-white"
+          : "bg-neutral-100 text-neutral-900"
+          } py-4 px-6 shadow-md top-0 left-0 w-full z-50`}
       >
         <nav className="flex items-center justify-between w-full">
           <div className="left flex items-center space-x-6">
             <ul className="flex space-x-6 items-center">
               <li
                 onClick={toggleSidebar}
-                className={`${
-                  theme === "dark"
-                    ? "hover:bg-neutral-700"
-                    : "hover:bg-neutral-300"
-                } p-2 rounded-full`}
+                className={`${theme === "dark"
+                  ? "hover:bg-neutral-700"
+                  : "hover:bg-neutral-300"
+                  } p-2 rounded-full`}
               >
                 <div className="cursor-pointer flex flex-col items-center relative group">
                   <SidebarIcon
-                    className={`${
-                      theme === "dark" ? "text-white" : "text-black"
-                    }`}
+                    className={`${theme === "dark" ? "text-white" : "text-black"
+                      }`}
                     size={28}
                   />
                 </div>
               </li>
               <li
                 onClick={() => navigate("/add-ticket")}
-                className={`${
-                  theme === "dark"
-                    ? "hover:bg-neutral-700"
-                    : "hover:bg-neutral-300"
-                } p-2 rounded-full`}
+                className={`${theme === "dark"
+                  ? "hover:bg-neutral-700"
+                  : "hover:bg-neutral-300"
+                  } p-2 rounded-full`}
               >
                 <div className="cursor-pointer flex flex-col items-center relative group">
                   <Plus
-                    className={`${
-                      theme === "dark" ? "text-white" : "text-black"
-                    }`}
+                    className={`${theme === "dark" ? "text-white" : "text-black"
+                      }`}
                     size={30}
                   />
                 </div>
-                <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  Logout
-                </div>
+
               </li>
+
             </ul>
           </div>
 
@@ -92,7 +89,8 @@ export const Header = ({ theme, toggleTheme }) => {
             onClick={() => navigate("/home")}
             className="center space-x-6 text-2xl font-bold text-gold cursor-pointer"
           >
-            <img src={logo} alt="" />
+            {/* fix this logo */}
+            {theme === "dark" ? <img src={logo} alt="" /> : <img src={logo_wh} alt="" />}
           </div>
 
           <div className="right flex items-center space-x-6">
@@ -101,11 +99,10 @@ export const Header = ({ theme, toggleTheme }) => {
                 <div className="mr-2 cursor-pointer flex flex-col items-center relative group">
                   <LogOut
                     size={24}
-                    className={`${
-                      theme === "dark"
-                        ? "white hover:text-red-400"
-                        : "black hover:text-red-500"
-                    }`}
+                    className={`${theme === "dark"
+                      ? "white hover:text-red-400"
+                      : "black hover:text-red-500"
+                      }`}
                   />
                   <div className="absolute bottom-0 translate-y-full bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     Logout

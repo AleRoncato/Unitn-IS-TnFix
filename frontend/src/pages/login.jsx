@@ -59,10 +59,12 @@ const LoginForm = () => {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (validateEmail() && validatePassword()) {
-            login(email, password);
-            navigate("/home");
+            login(email, password, () => {
+                navigate("/home");
+            });
         }
     };
+    
     return (
         <div className="flex min-h-screen items-center justify-center bg-indigo-200 font-mono">
             <div className="border border-gray-300 bg-white/40 ring-1 ring-black/5 px-4 w-full max-w-md rounded-lg shadow-xl p-8">

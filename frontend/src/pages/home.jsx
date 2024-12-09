@@ -2,14 +2,17 @@ import React from "react";
 import { Header } from "../components";
 import CardList from "../components/cardlist";
 
-export const Home = ({ theme, toggleTheme }) => {
+
+export const Home = () => {
   return (
     <>
-      <div className="flex-col ">
+      <div className="flex flex-col">
 
-        <Header theme={theme} toggleTheme={toggleTheme} />
+        <Header />
 
         <CardList />
+
+
 
       </div>
     </>

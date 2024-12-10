@@ -8,21 +8,26 @@ import { Home } from "./pages";
 import LoginForm from "./pages/login";
 import AddPage from "./pages/addPage";
 
-
 function App() {
-
-
   return (
     <Router>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<LoginForm />} />
           <Route path="/login" element={<LoginForm />} />
-          <Route element={<PrivateRoutes />}>
-            <Route path="/home" element={<Home />} />
-            <Route path="/add-ticket" element={<AddPage />} />
-          </Route>
-          <Route path="*" element={<h1 className="fixed h-[100vh] w-full text-black bg-white flex justify-center items-center"> <p>Not Found</p></h1>} />
+          {/* <Route element={<PrivateRoutes />}> */}
+          <Route path="/home" element={<Home />} />
+          <Route path="/add-ticket" element={<AddPage />} />
+          {/* </Route> */}
+          <Route
+            path="*"
+            element={
+              <h1 className="fixed h-[100vh] w-full text-black bg-white flex justify-center items-center">
+                {" "}
+                <p>Not Found</p>
+              </h1>
+            }
+          />
         </Routes>
       </AuthProvider>
     </Router>

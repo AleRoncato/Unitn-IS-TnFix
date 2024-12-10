@@ -3,10 +3,12 @@ const mongoose = require('mongoose');
 const ticketSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Relazione con User
   title: { type: String, required: true },
-  subject: { type: String, required: true },
-  location: { type: String, required: true },
-  description: { type: String, required: true },
-  photos: { type: [String], required: false, default: null },
+  type: { type: String, required: true },
+  building: { type: String, required: true },
+  floor: { type: String, required: true },
+  room: { type: String, required: true },
+  description: { type: String, required: false, default: null },
+  image: { type: [String], required: false, default: null },
 
   status: {
     type: String,
@@ -18,7 +20,7 @@ const ticketSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now },  // When the ticket was last updated
 
   // Reference to the additional ticket information
-  ticketInfo: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketInfo', required: true }  // Link to TicketInfo
+  ticketInfo: { type: mongoose.Schema.Types.ObjectId, ref: 'TicketInfo', required: false }  // Link to TicketInfo
 });
 
 // Middleware to update `updatedAt` before saving

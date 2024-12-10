@@ -1,38 +1,37 @@
-// prima pagina che viene caricata
-//contiene routing, returna le pagione HTML, ecc
+import React, { useState } from "react";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 
-import { Header } from './components';
-import { RouterProvider, createBrowserRouter } from 'react-router-dom';
-import { useState } from 'react'
-import './App.css'
-import { Home } from "./pages"
+import PrivateRoutes from "./utils/privateRoutes";
+import { AuthProvider } from "./utils/AuthProvider";
+
+import { Home } from "./pages";
+import LoginForm from "./pages/login";
+import AddPage from "./pages/addPage";
 
 function App() {
-  // const [count, setCount] = useState(0)
-
-  const [theme, setTheme] = useState('dark');
-
-  const toggleTheme = () => {
-    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
-  };
-
-  const router = createBrowserRouter([ //per il routing, in router ci salvo tutte le pagine della web app (URL)
-    {
-      path: '/',
-      element: <Header theme={theme} toggleTheme={toggleTheme} />,
-      children: [{
-        path: '/',
-        element: <Home  />
-      },]
-  }])
-
-  return ( // returna il codice HTML
-    <RouterProvider router={router} />  
-
-  )
-
- 
+  return (
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<LoginForm />} />
+          <Route path="/login" element={<LoginForm />} />
+          {/* <Route element={<PrivateRoutes />}> */}
+          <Route path="/home" element={<Home />} />
+          <Route path="/add-ticket" element={<AddPage />} />
+          {/* </Route> */}
+          <Route
+            path="*"
+            element={
+              <h1 className="fixed h-[100vh] w-full text-black bg-white flex justify-center items-center">
+                {" "}
+                <p>Not Found</p>
+              </h1>
+            }
+          />
+        </Routes>
+      </AuthProvider>
+    </Router>
+  );
 }
 
-
-export default App
+export default App;

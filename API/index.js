@@ -1,18 +1,19 @@
-const express = require('express');
+const express = require("express");
 const app = express();
+const cors = require("cors");
 
-require('dotenv').config()
+require("dotenv").config();
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
-
-
 
 app.use(express.json());
 app.listen(port, () => {
   console.log(`Server in esecuzione su http://localhost:${port}`);
 });
+
+app.use(cors({ origin: "http://localhost:5173" }));
 
 // const swaggerJsDoc = require('swagger-jsdoc');
 // const swaggerUi = require('swagger-ui-express');
@@ -38,7 +39,6 @@ app.listen(port, () => {
 // // Genera la documentazione Swagger
 // const swaggerDocs = swaggerJsDoc(swaggerOptions);
 // app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
 
 // /**
 //  * @swagger
@@ -85,32 +85,34 @@ app.listen(port, () => {
 
 //EFFECTIVE API
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 // Connetti a MongoDB (senza opzioni deprecate)
-mongoose.connect(DB)
-  .then(() => console.log('Connesso a MongoDB'))
-  .catch((error) => console.error('Errore nella connessione a MongoDB:', error));
+mongoose
+  .connect(DB)
+  .then(() => console.log("Connesso a MongoDB"))
+  .catch((error) =>
+    console.error("Errore nella connessione a MongoDB:", error)
+  );
 
-const User = require('./models/User');
+const User = require("./models/User");
 
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
-
-app.post('/register', async (req, res) => {
+app.post("/register", async (req, res) => {
   const { username, password, role } = req.body;
 
   // Verifica che tutti i campi siano forniti
   if (!username || !password || !role) {
-    return res.status(400).json({ error: 'Tutti i campi sono obbligatori' });
+    return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
   }
 
   try {
     // Controlla se l'utente esiste già
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).json({ error: 'Username già esistente' });
+      return res.status(400).json({ error: "Username già esistente" });
     }
 
     // Hash della password
@@ -120,78 +122,79 @@ app.post('/register', async (req, res) => {
     const newUser = new User({
       username,
       password: hashedPassword,
-      role
+      role,
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: 'Utente registrato con successo' });
+    res.status(201).json({ message: "Utente registrato con successo" });
   } catch (error) {
-    console.error('Errore nella registrazione:', error);
-    res.status(500).json({ error: 'Errore interno del server' });
+    console.error("Errore nella registrazione:", error);
+    res.status(500).json({ error: "Errore interno del server" });
   }
 });
 
 // Login degli utenti (sia admin che user)
-app.post('/login', async (req, res) => {
+app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
   try {
     // Trova l'utente nel database
     const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ error: 'Utente non trovato' });
+    if (!user) return res.status(400).json({ error: "Utente non trovato" });
 
     // Confronta la password inserita con quella salvata
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ error: 'Password errata' });
+    if (!isMatch) return res.status(400).json({ error: "Password errata" });
 
     // Crea un token JWT
-    const token = jwt.sign({ userId: user._id, role: user.role }, SSKEY, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, role: user.role }, SSKEY, {
+      expiresIn: "1h",
+    });
 
     res.json({ token });
   } catch (error) {
-    res.status(500).json({ error: 'Errore durante il login' });
+    res.status(500).json({ error: "Errore durante il login" });
   }
 });
 
-
 const authenticateToken = (req, res, next) => {
-  const token = req.header('Authorization')?.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Accesso negato' });
+  const token = req.header("Authorization")?.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Accesso negato" });
 
   try {
     const verified = jwt.verify(token, SSKEY);
     req.user = verified;
     next();
   } catch (error) {
-    res.status(400).json({ error: 'Token non valido' });
+    res.status(400).json({ error: "Token non valido" });
   }
 };
 
-
-const Ticket = require('./models/Ticket');
-const TicketInfo = require('./models/TicketInfo');
+const Ticket = require("./models/Ticket");
+const TicketInfo = require("./models/TicketInfo");
 
 // Creazione di un nuovo ticket
-app.post('/tickets', authenticateToken, async (req, res) => {
-  const { title, subject, location, description, photos } = req.body;
+app.post("/tickets", authenticateToken, async (req, res) => {
+  const { title, type, building, floor, room, description, image } = req.body;
 
   try {
-
     //create ticket
     const newTicket = new Ticket({
       user: req.user.userId, // Associa il ticket all'utente autenticato
       title,
-      subject,
-      location,
+      type,
+      building,
+      floor,
+      room,
       description,
-      photos
+      image,
     });
 
-    //SAVES IT 
-    await newTicket.save()
-      .then(ticket => {
-
+    //SAVES IT
+    await newTicket
+      .save()
+      .then((ticket) => {
         // After the ticket is created, create the additional info
         const ticketInfo = new TicketInfo({
           ticket: ticket._id,
@@ -201,26 +204,23 @@ app.post('/tickets', authenticateToken, async (req, res) => {
           notes: ["Initial diagnostic completed"],
         });
 
-        return ticketInfo.save()
-          .then(info => {
-            // Step 3: Update the ticket with the reference to the newly created TicketInfo
-            ticket.ticketInfo = info._id;  // Set the `ticketInfo` field with the newly created TicketInfo ID
-            return ticket.save();  // Save the ticket again with the updated reference
-          });
+        return ticketInfo.save().then((info) => {
+          // Step 3: Update the ticket with the reference to the newly created TicketInfo
+          ticket.ticketInfo = info._id; // Set the `ticketInfo` field with the newly created TicketInfo ID
+          return ticket.save(); // Save the ticket again with the updated reference
+        });
       })
-      .then(info => console.log("Ticket Info saved:", info))
-      .catch(err => console.error(err));
+      .then((info) => console.log("Ticket Info saved:", info))
+      .catch((err) => console.error(err));
 
     res.status(201).json(newTicket);
-
   } catch (error) {
-    res.status(500).json({ error: 'Errore nella creazione del ticket' });
+    res.status(500).json({ error: "Errore nella creazione del ticket" });
   }
 });
 
-
 // Visualizza tutti i ticket con possibilità di filtraggio
-app.get('/tickets', authenticateToken, async (req, res) => {
+app.get("/tickets", authenticateToken, async (req, res) => {
   const { status, startDate, endDate } = req.query;
 
   try {
@@ -233,31 +233,33 @@ app.get('/tickets', authenticateToken, async (req, res) => {
     }
 
     await Ticket.find(filter)
-      .populate('ticketInfo')  // Populate the `ticketInfo` field for all tickets
-      .then(tickets => {
-        res.json(tickets)
+      .populate("ticketInfo") // Populate the `ticketInfo` field for all tickets
+      .then((tickets) => {
+        res.json(tickets);
       })
-      .catch(err => console.error("Error retrieving tickets:", err));
-
-
+      .catch((err) => console.error("Error retrieving tickets:", err));
   } catch (error) {
-    res.status(500).json({ error: 'Errore nel recupero dei ticket' });
+    res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
 });
 
-
 // Aggiornare lo stato di un ticket (solo admin)
-app.put('/tickets/:id', authenticateToken, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ error: 'Accesso negato' });
+app.put("/tickets/:id", authenticateToken, async (req, res) => {
+  if (req.user.role !== "admin")
+    return res.status(403).json({ error: "Accesso negato" });
 
   const { status } = req.body;
 
   try {
-    const ticket = await Ticket.findByIdAndUpdate(req.params.id, { status }, { new: true });
-    if (!ticket) return res.status(404).json({ error: 'Ticket non trovato' });
+    const ticket = await Ticket.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    if (!ticket) return res.status(404).json({ error: "Ticket non trovato" });
 
     res.json(ticket);
   } catch (error) {
-    res.status(500).json({ error: 'Errore nell\'aggiornamento del ticket' });
+    res.status(500).json({ error: "Errore nell'aggiornamento del ticket" });
   }
 });

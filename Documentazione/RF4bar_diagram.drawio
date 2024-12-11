@@ -5,10 +5,10 @@
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
         <mxCell id="77e6c97f196da883-1" value="RF4" style="swimlane;html=1;childLayout=stackLayout;startSize=20;rounded=0;shadow=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=8;align=center;" parent="1" vertex="1">
-          <mxGeometry x="90" y="40" width="930" height="750" as="geometry" />
+          <mxGeometry x="90" y="40" width="930" height="690" as="geometry" />
         </mxCell>
         <mxCell id="77e6c97f196da883-2" value="Tecnico" style="swimlane;html=1;startSize=20;" parent="77e6c97f196da883-1" vertex="1">
-          <mxGeometry y="20" width="160" height="730" as="geometry" />
+          <mxGeometry y="20" width="160" height="670" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="77e6c97f196da883-2" source="77e6c97f196da883-8" target="6YQ4Ffm7FHz-dbg0A2aF-2">
           <mxGeometry relative="1" as="geometry" />
@@ -19,17 +19,8 @@
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-2" value="Organizza i ticket nel calendario integrato nella web app" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=8;align=center;" vertex="1" parent="77e6c97f196da883-2">
           <mxGeometry x="20" y="190" width="100" height="60" as="geometry" />
         </mxCell>
-        <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-32" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=3;" edge="1" parent="77e6c97f196da883-2" target="6YQ4Ffm7FHz-dbg0A2aF-12">
-          <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="170" y="290" as="sourcePoint" />
-            <mxPoint x="110" y="460" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="170" y="510" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
         <mxCell id="77e6c97f196da883-3" value="Operaio" style="swimlane;html=1;startSize=20;" parent="77e6c97f196da883-1" vertex="1">
-          <mxGeometry x="160" y="20" width="160" height="730" as="geometry" />
+          <mxGeometry x="160" y="20" width="160" height="670" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="77e6c97f196da883-3" source="6YQ4Ffm7FHz-dbg0A2aF-9" target="6YQ4Ffm7FHz-dbg0A2aF-12">
           <mxGeometry relative="1" as="geometry">
@@ -40,7 +31,16 @@
           <mxGeometry x="30" y="320" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-12" value="&lt;div&gt;Aggiunge, tramite token, l&#39;evento al calendario del suo account&lt;/div&gt;&lt;div&gt;(in sincrono con il tecnico)&lt;br&gt;&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=8;align=center;" vertex="1" parent="77e6c97f196da883-3">
-          <mxGeometry x="30" y="480" width="100" height="60" as="geometry" />
+          <mxGeometry x="50" y="480" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-32" value="" style="endArrow=none;html=1;rounded=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeWidth=3;" edge="1" parent="77e6c97f196da883-3" target="6YQ4Ffm7FHz-dbg0A2aF-12">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="20" y="290" as="sourcePoint" />
+            <mxPoint x="60" y="510" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="20" y="510" />
+            </Array>
+          </mxGeometry>
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="77e6c97f196da883-1" source="6YQ4Ffm7FHz-dbg0A2aF-2" target="6YQ4Ffm7FHz-dbg0A2aF-5">
           <mxGeometry relative="1" as="geometry" />
@@ -49,7 +49,7 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="77e6c97f196da883-4" value="Ticket" style="swimlane;html=1;startSize=20;" parent="77e6c97f196da883-1" vertex="1">
-          <mxGeometry x="320" y="20" width="290" height="730" as="geometry" />
+          <mxGeometry x="320" y="20" width="290" height="670" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-21" value="Aggiorna lo stato del ticket" style="rounded=1;whiteSpace=wrap;html=1;shadow=0;labelBackgroundColor=none;strokeWidth=1;fontFamily=Verdana;fontSize=8;align=center;" vertex="1" parent="77e6c97f196da883-4">
           <mxGeometry x="95" y="40" width="100" height="60" as="geometry" />
@@ -64,7 +64,7 @@
           <mxGeometry x="95" y="440" width="100" height="60" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-16" value="Sistema" style="swimlane;html=1;startSize=20;" vertex="1" parent="77e6c97f196da883-1">
-          <mxGeometry x="610" y="20" width="320" height="730" as="geometry" />
+          <mxGeometry x="610" y="20" width="320" height="670" as="geometry" />
         </mxCell>
         <mxCell id="6YQ4Ffm7FHz-dbg0A2aF-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="6YQ4Ffm7FHz-dbg0A2aF-16" source="6YQ4Ffm7FHz-dbg0A2aF-5">
           <mxGeometry relative="1" as="geometry">

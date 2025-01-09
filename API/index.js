@@ -4,6 +4,8 @@ const cors = require("cors");
 
 require("dotenv").config();
 
+const mongoose = require("mongoose");
+
 const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
@@ -15,79 +17,36 @@ app.listen(port, () => {
 
 app.use(cors({ origin: "http://localhost:5173" }));
 
-// const swaggerJsDoc = require('swagger-jsdoc');
-// const swaggerUi = require('swagger-ui-express');
+const swaggerJsDoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
-// // Impostazioni di Swagger
-// const swaggerOptions = {
-//   swaggerDefinition: {
-//     openapi: '3.0.0',
-//     info: {
-//       title: 'API di esempio',
-//       version: '1.0.0',
-//       description: 'Un esempio di API usando Swagger e Express',
-//     },
-//     servers: [
-//       {
-//         url: 'http://localhost:3000',
-//       },
-//     ],
-//   },
-//   apis: ['./index.js'], // Questo specifica dove trovare i commenti/documentazione
-// };
+// Impostazioni di Swagger
+const swaggerOptions = {
+  swaggerDefinition: {
+    openapi: "3.0.0",
+    info: {
+      title: "API di esempio",
+      version: "1.0.0",
+      description: "Un esempio di API usando Swagger e Express",
+    },
+    servers: [
+      {
+        url: "http://localhost:3000",
+      },
+    ],
+  },
+  apis: ["./index.js"], // Questo specifica dove trovare i commenti/documentazione
+};
 
-// // Genera la documentazione Swagger
-// const swaggerDocs = swaggerJsDoc(swaggerOptions);
-// app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+// Genera la documentazione Swagger
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
-// /**
-//  * @swagger
-//  * /:
-//  *   get:
-//  *     summary: Ritorna un messaggio di benvenuto
-//  *     responses:
-//  *       200:
-//  *         description: Successo
-//  */
-// app.get('/', (req, res) => {
-//   res.send('Benvenuto nella mia API!');
-// });
+// ============= //
+// EFFECTIVE API //
+// ============= //
 
-// /**
-//  * @swagger
-//  * /users:
-//  *   get:
-//  *     summary: Ritorna la lista degli utenti
-//  *     responses:
-//  *       200:
-//  *         description: Lista degli utenti
-//  *         content:
-//  *           application/json:
-//  *             schema:
-//  *               type: array
-//  *               items:
-//  *                 type: object
-//  *                 properties:
-//  *                   id:
-//  *                     type: integer
-//  *                     example: 1
-//  *                   name:
-//  *                     type: string
-//  *                     example: Mario Rossi
-//  */
-// app.get('/users', (req, res) => {
-//   const users = [
-//     { id: 1, name: 'Mario Rossi' },
-//     { id: 2, name: 'Giulia Verdi' },
-//   ];
-//   res.json(users);
-// });
-
-//EFFECTIVE API
-
-const mongoose = require("mongoose");
-
-// Connetti a MongoDB (senza opzioni deprecate)
+// Connetti a MongoDB
 mongoose
   .connect(DB)
   .then(() => console.log("Connesso a MongoDB"))
@@ -100,6 +59,41 @@ const User = require("./models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+
+/**
+ * @swagger
+ * /register:
+ *   post:
+ *     summary: Registra un nuovo utente
+ *     tags: [Utenti]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *               - role
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Il nome utente dell'utente
+ *               password:
+ *                 type: string
+ *                 description: La password dell'utente
+ *               role:
+ *                 type: string
+ *                 description: Il ruolo dell'utente (es. admin, user)
+ *     responses:
+ *       201:
+ *         description: Utente registrato con successo
+ *       400:
+ *         description: Richiesta non valida
+ *       500:
+ *         description: Errore interno del server
+ */
 app.post("/register", async (req, res) => {
   const { username, password, role } = req.body;
 
@@ -134,6 +128,37 @@ app.post("/register", async (req, res) => {
   }
 });
 
+
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Effettua il login di un utente
+ *     tags: [Utenti]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Il nome utente dell'utente
+ *               password:
+ *                 type: string
+ *                 description: La password dell'utente
+ *     responses:
+ *       200:
+ *         description: Login effettuato con successo
+ *       400:
+ *         description: Credenziali non valide
+ *       500:
+ *         description: Errore interno del server
+ */
 // Login degli utenti (sia admin che user)
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
@@ -158,6 +183,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Middleware per autenticare il token
 const authenticateToken = (req, res, next) => {
   const token = req.header("Authorization")?.split(" ")[1];
   if (!token) return res.status(401).json({ error: "Accesso negato" });

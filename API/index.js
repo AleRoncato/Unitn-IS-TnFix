@@ -31,7 +31,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: "http://localhost:3000",
+        url: "http://localhost:5000",
       },
     ],
   },
@@ -54,11 +54,10 @@ mongoose
     console.error("Errore nella connessione a MongoDB:", error)
   );
 
-const User = require("./models/User");
+const User = require("./models/newModels").User; // Importa il modello User
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 
 /**
  * @swagger
@@ -128,7 +127,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-
 /**
  * @swagger
  * /login:
@@ -183,31 +181,55 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Middleware per autenticare il token
-const authenticateToken = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Accesso negato" });
+const authenticateToken = require("./middleware/AUTH");
 
+// Viene triggerato ogni volta che un utente esce dalla pagina updates (per aggiornare last_action)
+
+app.put("/users/:id", authenticateToken, async (req, res) => {
+  //updates the last_action field of the user
   try {
-    const verified = jwt.verify(token, SSKEY);
-    req.user = verified;
-    next();
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { last_action: Date.now() },
+      { new: true }
+    );
   } catch (error) {
-    res.status(400).json({ error: "Token non valido" });
+    res.status(500).json({ error: "Errore nell'aggiornamento dell'utente" });
   }
-};
+});
 
-const Ticket = require("./models/Ticket");
-const TicketInfo = require("./models/TicketInfo");
+const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticket
+const TicketInfo = require("./models/newModels").TicketInfo; // Importa il modello TicketInfo
 
-// Creazione di un nuovo ticket
 app.post("/tickets", authenticateToken, async (req, res) => {
   const { title, type, building, floor, room, description, image } = req.body;
 
   try {
-    //create ticket
+    if (!title || !type || !building || !floor || !room ) {
+      return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
+    }
+
+    const existingTicket = await Ticket.findOne({
+      title,
+      type,
+      building,
+      floor,
+      room,
+    });
+
+
+
+    if (existingTicket) {
+      // Aggiungi l'utente come follower del ticket
+      const newFollow = new Follow({
+        user: req.user.userId,
+        ticket: existingTicket._id,
+      });
+      await newFollow.save();
+      return res.status(200).json({ message: "Ticket uguale già esistente, sei stato aggiunto come Follower." });
+    }
+
     const newTicket = new Ticket({
-      user: req.user.userId, // Associa il ticket all'utente autenticato
       title,
       type,
       building,
@@ -217,75 +239,109 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       image,
     });
 
-    //SAVES IT
-    await newTicket
-      .save()
-      .then((ticket) => {
-        // After the ticket is created, create the additional info
-        const ticketInfo = new TicketInfo({
-          ticket: ticket._id,
-          priority: "high",
-          plannedDate: new Date("2024-10-30"),
-          assignedTo: null,
-          notes: ["Initial diagnostic completed"],
-        });
+    await newTicket.save().then((ticket) => {
+      const ticketInfo = new TicketInfo({
+        ticketId: ticket._id,
+        creatore: req.user.userId,
+      });
 
-        return ticketInfo.save().then((info) => {
-          // Step 3: Update the ticket with the reference to the newly created TicketInfo
-          ticket.ticketInfo = info._id; // Set the `ticketInfo` field with the newly created TicketInfo ID
-          return ticket.save(); // Save the ticket again with the updated reference
-        });
-      })
-      .then((info) => console.log("Ticket Info saved:", info))
-      .catch((err) => console.error(err));
+      return ticketInfo.save().then((info) => {
+        ticket.ticketInfo = info._id;
+        return ticket.save();
+      });
+    });
 
-    res.status(201).json(newTicket);
+    res.status(201).json({message:"Ticket creato con successo."});
   } catch (error) {
-    res.status(500).json({ error: "Errore nella creazione del ticket" });
+    res.status(500).json({ error: "Errore nella creazione del ticket." });
   }
 });
 
-// Visualizza tutti i ticket con possibilità di filtraggio
-app.get("/tickets", authenticateToken, async (req, res) => {
-  const { status, startDate, endDate } = req.query;
+const Follow = require("./models/newModels").Follow; // Importa il modello Follow
 
+app.get("/updates", authenticateToken, async (req, res) => {
   try {
-    let filter = {};
-    if (status) filter.status = status;
-    if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
-    }
+    // NEED TO CHANGE IT TO WORK
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: "Utente non trovato" });
 
-    await Ticket.find(filter)
-      .populate("ticketInfo") // Populate the `ticketInfo` field for all tickets
-      .then((tickets) => {
-        res.json(tickets);
-      })
-      .catch((err) => console.error("Error retrieving tickets:", err));
+    const lastAction = user.last_action;
+
+    const tickets = await Ticket.find().populate({
+      path: "ticketInfo",
+      match: { updatedAt: { $gt: lastAction } },
+    });
+
+    const updatedTickets = tickets.filter((ticket) => ticket.ticketInfo);
+
+    res.json(updatedTickets);
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
 });
 
-// Aggiornare lo stato di un ticket (solo admin)
-app.put("/tickets/:id", authenticateToken, async (req, res) => {
-  if (req.user.role !== "admin")
-    return res.status(403).json({ error: "Accesso negato" });
+app.get("/tickets", authenticateToken, async (req, res) => {
+  const { status } = req.query;
+  if (!status) {
+    return res.status(400).json({ error: "Lo status è obbligatorio" });
+  }
+  // NEED TO CHANGE IT TO WORK
+  try {
+    const followedTickets = await Follow.find({
+      user: req.user.userId,
+    }).populate({ ticketId: { state: status } });
 
-  const { status } = req.body;
+    const tickets = await Ticket.find().populate({
+      TicketInfo: { $and: { state: status, creatore: req.user.userId } },
+    });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel recupero dei ticket" });
+  }
+});
+
+const Place = require("./models/newModels").Place; // Importa il modello Place
+
+app.get("/places", async (req, res) => {
+  try {
+    // I posti sono un array di oggetti con il campo "name" e "floors"
+    // floors è un array di oggetti con il campo "floor" e "rooms"
+    // rooms è un array di stringhe
+    const places = await Place.find();
+
+    res.json(places);
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel recupero dei luoghi" });
+  }
+});
+
+app.post("/places", async (req, res) => {
+  const { name, floors } = req.body;
 
   try {
-    const ticket = await Ticket.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-    if (!ticket) return res.status(404).json({ error: "Ticket non trovato" });
+    const newPlace = new Place({
+      name,
+      floors, //Deve essere un array di oggetti con il campo "floor" e "rooms"
+    });
 
-    res.json(ticket);
+    await newPlace.save();
+    res.status(201).json(newPlace);
   } catch (error) {
-    res.status(500).json({ error: "Errore nell'aggiornamento del ticket" });
+    res.status(500).json({ error: "Errore nella creazione del luogo" });
+  }
+});
+
+app.post("/follows", authenticateToken, async (req, res) => {
+  const { ticketId } = req.body;
+
+  try {
+    const newFollow = new Follow({
+      user: req.user.userId,
+      ticket: ticketId,
+    });
+
+    await newFollow.save();
+    res.status(201).json(newFollow);
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel seguire il ticket" });
   }
 });

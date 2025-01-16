@@ -200,12 +200,13 @@ app.put("/users/:id", authenticateToken, async (req, res) => {
 
 const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticket
 const TicketInfo = require("./models/newModels").TicketInfo; // Importa il modello TicketInfo
+const Follow = require("./models/newModels").Follow; // Importa il modello Follow
 
 app.post("/tickets", authenticateToken, async (req, res) => {
   const { title, type, building, floor, room, description, image } = req.body;
 
   try {
-    if (!title || !type || !building || !floor || !room ) {
+    if (!title || !type || !building || !floor || !room) {
       return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
     }
 
@@ -217,8 +218,6 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       room,
     });
 
-
-
     if (existingTicket) {
       // Aggiungi l'utente come follower del ticket
       const newFollow = new Follow({
@@ -226,7 +225,10 @@ app.post("/tickets", authenticateToken, async (req, res) => {
         ticket: existingTicket._id,
       });
       await newFollow.save();
-      return res.status(200).json({ message: "Ticket uguale già esistente, sei stato aggiunto come Follower." });
+      return res.status(201).json({
+        message:
+          "Ticket uguale già esistente, sei stato aggiunto come Follower.",
+      });
     }
 
     const newTicket = new Ticket({
@@ -251,13 +253,11 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       });
     });
 
-    res.status(201).json({message:"Ticket creato con successo."});
+    res.status(201).json({ message: "Ticket creato con successo." });
   } catch (error) {
     res.status(500).json({ error: "Errore nella creazione del ticket." });
   }
 });
-
-const Follow = require("./models/newModels").Follow; // Importa il modello Follow
 
 app.get("/updates", authenticateToken, async (req, res) => {
   try {
@@ -282,20 +282,99 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
 app.get("/tickets", authenticateToken, async (req, res) => {
   const { status } = req.query;
+
   if (!status) {
     return res.status(400).json({ error: "Lo status è obbligatorio" });
   }
-  // NEED TO CHANGE IT TO WORK
-  try {
-    const followedTickets = await Follow.find({
-      user: req.user.userId,
-    }).populate({ ticketId: { state: status } });
 
-    const tickets = await Ticket.find().populate({
-      TicketInfo: { $and: { state: status, creatore: req.user.userId } },
+  if (req.user.role === "worker" || req.user.role === "tecnico") {
+    // MANAGING PART
+    // gets all the tickets with the specified status
+
+    try {
+      const tickets = await Ticket.find({
+        state: status,
+      }).populate("ticketInfo");
+
+      res.json(tickets);
+    } catch (error) {
+      res.status(500).json({ error: "Errore nel recupero dei ticket" });
+    }
+  } else {
+    // USER PART
+    // Gets all the tickets that the user is following
+    // and all the ones that the user created
+
+    try {
+      const followedTickets = await Follow.find({
+        user: req.user.userId,
+      }).populate("ticket");
+
+      const createdTickets = await Ticket.find({
+        "ticketInfo.creatore": req.user.userId,
+        state: status,
+      }).populate("ticketInfo");
+
+      const allTickets = [
+        ...followedTickets.map((f) => f.ticket),
+        ...createdTickets,
+      ];
+
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 25;
+      const skip = (page - 1) * limit;
+
+      const paginatedTickets = allTickets.slice(skip, skip + limit);
+
+      res.json({
+        total: allTickets.length,
+        page,
+        limit,
+        tickets: paginatedTickets,
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Errore nel recupero dei ticket" });
+    }
+  }
+});
+
+app.put("/tickets/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { state, plannedDate, inizio, fine, worker } = req.body;
+
+  try {
+    const ticketInfo = await TicketInfo.findOne({
+      ticketId: id,
     });
+
+    if (!ticketInfo) {
+      return res.status(404).json({ error: "Ticket non trovato" });
+    }
+
+    if (req.user.role === "user") {
+      return res.status(403).json({ error: "Non sei autorizzato" });
+    }
+
+    if (state) ticketInfo.state = state;
+
+    // Saves the user id of the worker or the technician
+    // when state is "Accettato" or "In lavorazione"
+    if (state == "Accettato") ticketInfo.tecnicoGestore = req.user.userId;
+
+    if (state == "In lavorazione") {
+      if(!worker) return res.status(400).json({ error: "Il lavoratore è obbligatorio" });
+      ticketInfo.lavoratoreAssegnato = worker;
+    }
+
+    if (plannedDate) ticketInfo.plannedDate = plannedDate;
+    if (inizio) ticketInfo.inizio = inizio;
+    if (fine) ticketInfo.fine = fine;
+
+    await ticketInfo.save();
+
+    res.json({ message: "Ticket updated with success." });
   } catch (error) {
-    res.status(500).json({ error: "Errore nel recupero dei ticket" });
+    res.status(500).json({ error: "Errore nell'aggiornamento del ticket" });
   }
 });
 

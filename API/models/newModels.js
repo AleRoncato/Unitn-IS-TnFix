@@ -23,8 +23,6 @@ const TicketSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-
-
 // Definizione del modello TicketInfo
 const TicketInfoSchema = new mongoose.Schema(
   {
@@ -52,16 +50,20 @@ const TicketInfoSchema = new mongoose.Schema(
 
 // Middleware per aggiornare `updatedAt` prima di salvare
 TicketInfoSchema.pre("save", function (next) {
-    this.updatedAt = Date.now();
-    next();
-  });
+  this.updatedAt = Date.now();
+  next();
+}); 
 
 // Definizione del modello User
 const UserSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    ruolo: { type: String, required: true },
+    ruolo: {
+      type: String,
+      enum: ["tecnico", "user", "admin", "worker"],
+      required: true,
+    },
     email: { type: String, required: true, unique: true },
     telefono: { type: String },
     nome: { type: String, required: true },

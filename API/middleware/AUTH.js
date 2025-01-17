@@ -1,18 +1,16 @@
-const jwt = require("jsonwebtoken");
-const SSKEY = process.env.SSKEY;
+const jwt = require('jsonwebtoken');
 
-// Middleware per autenticare il token
 const authenticateToken = (req, res, next) => {
-  const token = req.header("Authorization")?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "Accesso negato" });
+  const token = req.header('Authorization')?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Accesso negato' });
 
   try {
-    const verified = jwt.verify(token, SSKEY);
+    const verified = jwt.verify(token, process.env.SSKEY);
     req.user = verified;
     next();
   } catch (error) {
-    res.status(400).json({ error: "Token non valido" });
+    res.status(400).json({ error: 'Token non valido' });
   }
 };
 
-export default authenticateToken;
+module.exports = authenticateToken;

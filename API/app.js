@@ -1,26 +1,29 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
-
 require("dotenv").config();
-
 const mongoose = require("mongoose");
 
+// Impostazioni del server
 const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
 
+// Middleware per il parsing del body
 app.use(express.json());
+
+// Abilita CORS solo per il frontend
+app.use(cors({ origin: "http://localhost:5173" }));
+
+// Avvia il server
 app.listen(port, () => {
   console.log(`Server in esecuzione su http://localhost:${port}`);
 });
 
-app.use(cors({ origin: "http://localhost:5173" }));
-
+// Impostazioni di Swagger
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
-// Impostazioni di Swagger
 const swaggerOptions = {
   swaggerDefinition: {
     openapi: "3.0.0",
@@ -35,11 +38,14 @@ const swaggerOptions = {
       },
     ],
   },
-  apis: ["./index.js"], // Questo specifica dove trovare i commenti/documentazione
+  apis: ["./index.js"],
+  // Questo specifica dove trovare i commenti/documentazione
 };
 
 // Genera la documentazione Swagger
 const swaggerDocs = swaggerJsDoc(swaggerOptions);
+
+// Mostra la documentazione Swagger all'indirizzo /api-docs
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // ============= //
@@ -175,28 +181,13 @@ app.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    res.json({ token });
+    res.status(200).json({ token });
   } catch (error) {
     res.status(500).json({ error: "Errore durante il login" });
   }
 });
 
-const authenticateToken = require("./middleware/AUTH");
-
-// Viene triggerato ogni volta che un utente esce dalla pagina updates (per aggiornare last_action)
-
-app.put("/users/:id", authenticateToken, async (req, res) => {
-  //updates the last_action field of the user
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { last_action: Date.now() },
-      { new: true }
-    );
-  } catch (error) {
-    res.status(500).json({ error: "Errore nell'aggiornamento dell'utente" });
-  }
-});
+const authenticateToken = require("./middleware/AUTH"); // Correct the import
 
 const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticket
 const TicketInfo = require("./models/newModels").TicketInfo; // Importa il modello TicketInfo
@@ -263,37 +254,34 @@ app.get("/updates", authenticateToken, async (req, res) => {
   try {
     // NEED TO CHANGE IT TO WORK
     const user = await User.findById(req.user.userId);
-    if (!user) return res.status(404).json({ error: "Utente non trovato" });
+    if (!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
 
-    const lastAction = user.last_action;
+    const tickets = await Ticket.find({
+      updatedAt: { $gt: user.last_action },
+    }).populate("ticketInfo");
 
-    const tickets = await Ticket.find().populate({
-      path: "ticketInfo",
-      match: { updatedAt: { $gt: lastAction } },
-    });
-
-    const updatedTickets = tickets.filter((ticket) => ticket.ticketInfo);
-
-    res.json(updatedTickets);
+    res.json(tickets);
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
 });
 
 app.get("/tickets", authenticateToken, async (req, res) => {
-  const { status } = req.query;
+  const { state } = req.query;
 
-  if (!status) {
-    return res.status(400).json({ error: "Lo status è obbligatorio" });
+  if (!state) {
+    return res.status(400).json({ error: "Lo state è obbligatorio" });
   }
 
   if (req.user.role === "worker" || req.user.role === "tecnico") {
     // MANAGING PART
-    // gets all the tickets with the specified status
+    // gets all the tickets with the specified state
 
     try {
       const tickets = await Ticket.find({
-        state: status,
+        state: state,
       }).populate("ticketInfo");
 
       res.json(tickets);
@@ -312,7 +300,7 @@ app.get("/tickets", authenticateToken, async (req, res) => {
 
       const createdTickets = await Ticket.find({
         "ticketInfo.creatore": req.user.userId,
-        state: status,
+        state: state,
       }).populate("ticketInfo");
 
       const allTickets = [
@@ -362,7 +350,8 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
     if (state == "Accettato") ticketInfo.tecnicoGestore = req.user.userId;
 
     if (state == "In lavorazione") {
-      if(!worker) return res.status(400).json({ error: "Il lavoratore è obbligatorio" });
+      if (!worker)
+        return res.status(400).json({ error: "Il lavoratore è obbligatorio" });
       ticketInfo.lavoratoreAssegnato = worker;
     }
 
@@ -424,3 +413,23 @@ app.post("/follows", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Errore nel seguire il ticket" });
   }
 });
+
+// Viene triggerato ogni volta che un utente esce dalla pagina updates (per aggiornare last_action)
+
+app.put("/users/:id", authenticateToken, async (req, res) => {
+  //updates the last_action field of the user
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.userId,
+      { last_action: Date.now() },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+    res.status(200).json({ message: "Utente aggiornato con successo" });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nell'aggiornamento dell'utente" });
+  }
+});
+

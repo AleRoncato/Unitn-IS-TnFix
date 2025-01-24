@@ -9,16 +9,15 @@ const port = process.env.PORT || 5000;
 const SSKEY = process.env.SSKEY;
 const DB = process.env.DB;
 
+// app.listen(port, () => {
+//   console.log(`Server in esecuzione su http://localhost:${port}`);
+// });
+
 // Middleware per il parsing del body
 app.use(express.json());
 
 // Abilita CORS solo per il frontend
 app.use(cors({ origin: "http://localhost:5173" }));
-
-// Avvia il server
-app.listen(port, () => {
-  console.log(`Server in esecuzione su http://localhost:${port}`);
-});
 
 // Impostazioni di Swagger
 const swaggerJsDoc = require("swagger-jsdoc");
@@ -100,17 +99,17 @@ const jwt = require("jsonwebtoken");
  *         description: Errore interno del server
  */
 app.post("/register", async (req, res) => {
-  const { username, password, role } = req.body;
+  const { username, password, role, email, telefono, nome, cognome } = req.body;
 
   // Verifica che tutti i campi siano forniti
-  if (!username || !password || !role) {
+  if (!username || !password || !role || !email || !nome || !cognome) {
     return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
   }
 
   try {
-    // Controlla se l'utente esiste già
-    const existingUser = await User.findOne({ username });
-    if (existingUser) {
+    // Controlla se l'utente esiste già per username e email
+    const existing = await User.findOne({ $or: [{ username }, { email }] });
+    if (existing) {
       return res.status(400).json({ error: "Username già esistente" });
     }
 
@@ -121,7 +120,12 @@ app.post("/register", async (req, res) => {
     const newUser = new User({
       username,
       password: hashedPassword,
-      role,
+      ruolo: role,
+      email,
+      telefono,
+      nome,
+      cognome,
+      last_action: Date.now(),
     });
 
     await newUser.save();
@@ -187,6 +191,24 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// NEED to modify all the other stuff on the database referncing the user 
+app.delete("/users/:username", async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const user = await User.findOneAndDelete({ username });
+    if (!user) {
+      return res.status(404).json({ error: "Utente non trovato" });
+    }
+
+    res.json({ message: "Utente eliminato con successo" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ error: "Errore durante l'eliminazione dell'utente" });
+  }
+});
+
 const authenticateToken = require("./middleware/AUTH"); // Correct the import
 
 const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticket
@@ -202,18 +224,19 @@ app.post("/tickets", authenticateToken, async (req, res) => {
     }
 
     const existingTicket = await Ticket.findOne({
-      title,
       type,
       building,
       floor,
       room,
     });
 
+    console.log(existingTicket);
+
     if (existingTicket) {
       // Aggiungi l'utente come follower del ticket
       const newFollow = new Follow({
-        user: req.user.userId,
-        ticket: existingTicket._id,
+        userId: req.user.userId,
+        ticketId: existingTicket._id,
       });
       await newFollow.save();
       return res.status(201).json({
@@ -252,7 +275,6 @@ app.post("/tickets", authenticateToken, async (req, res) => {
 
 app.get("/updates", authenticateToken, async (req, res) => {
   try {
-    // NEED TO CHANGE IT TO WORK
     const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ error: "Utente non trovato" });
@@ -274,6 +296,9 @@ app.get("/tickets", authenticateToken, async (req, res) => {
   if (!state) {
     return res.status(400).json({ error: "Lo state è obbligatorio" });
   }
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 20;
+  const skip = (page - 1) * limit;
 
   if (req.user.role === "worker" || req.user.role === "tecnico") {
     // MANAGING PART
@@ -284,7 +309,15 @@ app.get("/tickets", authenticateToken, async (req, res) => {
         state: state,
       }).populate("ticketInfo");
 
-      res.json(tickets);
+      const paginatedTickets = tickets.slice(skip, skip + limit);
+
+      // Returns the total number of tickets, the current page, the limit and the tickets
+      res.json({
+        total: tickets.length,
+        page,
+        limit,
+        tickets: paginatedTickets,
+      });
     } catch (error) {
       res.status(500).json({ error: "Errore nel recupero dei ticket" });
     }
@@ -307,10 +340,6 @@ app.get("/tickets", authenticateToken, async (req, res) => {
         ...followedTickets.map((f) => f.ticket),
         ...createdTickets,
       ];
-
-      const page = parseInt(req.query.page) || 1;
-      const limit = parseInt(req.query.limit) || 25;
-      const skip = (page - 1) * limit;
 
       const paginatedTickets = allTickets.slice(skip, skip + limit);
 
@@ -336,7 +365,7 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
     });
 
     if (!ticketInfo) {
-      return res.status(404).json({ error: "Ticket non trovato" });
+      return res.status(405).json({ error: "Ticket non trovato" });
     }
 
     if (req.user.role === "user") {
@@ -382,16 +411,40 @@ app.get("/places", async (req, res) => {
   }
 });
 
-app.post("/places", async (req, res) => {
+app.post("/places", authenticateToken, async (req, res) => {
   const { name, floors } = req.body;
 
+  if (!name || !floors) {
+    return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
+  }
+
+  //Floors deve essere un array di oggetti con il campo "floor" e "rooms"
+  // floors: [
+  //   {
+  //     floor: 1,
+  //     rooms: ["Room 101", "Room 102", "Room 103"],
+  //   },
+  //   {
+  //     floor: 2,
+  //     rooms: ["Room 201", "Room 202", "Room 203"],
+  //   },
+  // ],
+
   try {
+    console.log(floors);
     const newPlace = new Place({
       name,
-      floors, //Deve essere un array di oggetti con il campo "floor" e "rooms"
+      floors: floors.map((floor) => ({
+        piano: floor.floor,
+        stanze: floor.rooms.map((room) => room),
+      })),
     });
 
+    console.log(newPlace);
+
     await newPlace.save();
+
+    console.log("Done");
     res.status(201).json(newPlace);
   } catch (error) {
     res.status(500).json({ error: "Errore nella creazione del luogo" });
@@ -433,3 +486,10 @@ app.put("/users/:id", authenticateToken, async (req, res) => {
   }
 });
 
+// // Export the app and server for testing
+
+const server = app.listen(port, () => {
+  console.log(`Server in esecuzione su http://localhost:${port}`);
+});
+
+module.exports = { app, server };

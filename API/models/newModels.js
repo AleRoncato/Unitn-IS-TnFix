@@ -52,7 +52,7 @@ const TicketInfoSchema = new mongoose.Schema(
 TicketInfoSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
-}); 
+});
 
 // Definizione del modello User
 const UserSchema = new mongoose.Schema(
@@ -76,8 +76,8 @@ const UserSchema = new mongoose.Schema(
 // Definizione del modello Place
 const PlaceSchema = new mongoose.Schema(
   {
-    nome: { type: String, required: true },
-    piani: [
+    name: { type: String, required: true },
+    floors: [
       {
         piano: { type: String, required: true },
         stanze: [{ type: String }],

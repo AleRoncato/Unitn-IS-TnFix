@@ -1,6 +1,5 @@
 const request = require("supertest");
-const { app, server } = require("../app.js"); // Adjust the path as necessary
-const e = require("express");
+const app = require("../index.js");
 
 describe("API Tests", () => {
   let token;
@@ -26,15 +25,14 @@ describe("API Tests", () => {
   });
 
   afterAll(async () => {
-    // Cleanup: delete the test user
 
-    // THE DELETE MIGHT CHANGE
+    // Cleanup: delete the test user
     await request(app)
       .delete("/users/testuser")
       .set("Authorization", `Bearer ${token}`);
 
-    // Close the server
-    server.close();
+
+    await new Promise((resolve) => setTimeout(() => resolve(), 500)); // avoid jest open handle error
   });
 
   // AUTHENTICATION TESTS

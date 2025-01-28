@@ -1,17 +1,11 @@
 const express = require("express");
 const app = express();
 const cors = require("cors");
+
 require("dotenv").config();
-const mongoose = require("mongoose");
 
-// Impostazioni del server
-const port = process.env.PORT || 5000;
+// Impostazioni cripting
 const SSKEY = process.env.SSKEY;
-const DB = process.env.DB;
-
-// app.listen(port, () => {
-//   console.log(`Server in esecuzione su http://localhost:${port}`);
-// });
 
 // Middleware per il parsing del body
 app.use(express.json());
@@ -19,45 +13,10 @@ app.use(express.json());
 // Abilita CORS solo per il frontend
 app.use(cors({ origin: "http://localhost:5173" }));
 
-// Impostazioni di Swagger
-const swaggerJsDoc = require("swagger-jsdoc");
-const swaggerUi = require("swagger-ui-express");
-
-const swaggerOptions = {
-  swaggerDefinition: {
-    openapi: "3.0.0",
-    info: {
-      title: "API di esempio",
-      version: "1.0.0",
-      description: "Un esempio di API usando Swagger e Express",
-    },
-    servers: [
-      {
-        url: "http://localhost:5000",
-      },
-    ],
-  },
-  apis: ["./index.js"],
-  // Questo specifica dove trovare i commenti/documentazione
-};
-
-// Genera la documentazione Swagger
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-
-// Mostra la documentazione Swagger all'indirizzo /api-docs
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // ============= //
 // EFFECTIVE API //
 // ============= //
-
-// Connetti a MongoDB
-mongoose
-  .connect(DB)
-  .then(() => console.log("Connesso a MongoDB"))
-  .catch((error) =>
-    console.error("Errore nella connessione a MongoDB:", error)
-  );
 
 const User = require("./models/newModels").User; // Importa il modello User
 
@@ -68,35 +27,35 @@ const jwt = require("jsonwebtoken");
  * @swagger
  * /register:
  *   post:
- *     summary: Registra un nuovo utente
- *     tags: [Utenti]
+ *     summary: Register a new user
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - username
- *               - password
- *               - role
  *             properties:
  *               username:
  *                 type: string
- *                 description: Il nome utente dell'utente
  *               password:
  *                 type: string
- *                 description: La password dell'utente
  *               role:
  *                 type: string
- *                 description: Il ruolo dell'utente (es. admin, user)
+ *               email:
+ *                 type: string
+ *               telefono:
+ *                 type: string
+ *               nome:
+ *                 type: string
+ *               cognome:
+ *                 type: string
  *     responses:
  *       201:
- *         description: Utente registrato con successo
+ *         description: User registered successfully
  *       400:
- *         description: Richiesta non valida
+ *         description: Bad request
  *       500:
- *         description: Errore interno del server
+ *         description: Internal server error
  */
 app.post("/register", async (req, res) => {
   const { username, password, role, email, telefono, nome, cognome } = req.body;
@@ -141,33 +100,26 @@ app.post("/register", async (req, res) => {
  * @swagger
  * /login:
  *   post:
- *     summary: Effettua il login di un utente
- *     tags: [Utenti]
+ *     summary: Login a user
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - username
- *               - password
  *             properties:
  *               username:
  *                 type: string
- *                 description: Il nome utente dell'utente
  *               password:
  *                 type: string
- *                 description: La password dell'utente
  *     responses:
  *       200:
- *         description: Login effettuato con successo
+ *         description: Login successful
  *       400:
- *         description: Credenziali non valide
+ *         description: Bad request
  *       500:
- *         description: Errore interno del server
+ *         description: Internal server error
  */
-// Login degli utenti (sia admin che user)
 app.post("/login", async (req, res) => {
   const { username, password } = req.body;
 
@@ -191,7 +143,26 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// NEED to modify all the other stuff on the database referncing the user 
+// NEED to modify all the other stuff on the database referncing the user
+/**
+ * @swagger
+ * /users/{username}:
+ *   delete:
+ *     summary: Delete a user by username
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 app.delete("/users/:username", async (req, res) => {
   const { username } = req.params;
 
@@ -215,6 +186,42 @@ const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticke
 const TicketInfo = require("./models/newModels").TicketInfo; // Importa il modello TicketInfo
 const Follow = require("./models/newModels").Follow; // Importa il modello Follow
 
+/**
+ * @swagger
+ * /tickets:
+ *   post:
+ *     summary: Create a new ticket
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               building:
+ *                 type: string
+ *               floor:
+ *                 type: string
+ *               room:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Ticket created successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
 app.post("/tickets", authenticateToken, async (req, res) => {
   const { title, type, building, floor, room, description, image } = req.body;
 
@@ -273,6 +280,21 @@ app.post("/tickets", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /updates:
+ *   get:
+ *     summary: Get updates for the user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Updates retrieved successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 app.get("/updates", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
@@ -290,19 +312,49 @@ app.get("/updates", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /tickets:
+ *   get:
+ *     summary: Get tickets by state
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: state
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Tickets retrieved successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
 app.get("/tickets", authenticateToken, async (req, res) => {
   const { state } = req.query;
 
   if (!state) {
     return res.status(400).json({ error: "Lo state è obbligatorio" });
   }
+
+  // Paginazione dei risultati
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
 
   if (req.user.role === "worker" || req.user.role === "tecnico") {
     // MANAGING PART
-    // gets all the tickets with the specified state
 
     try {
       const tickets = await Ticket.find({
@@ -355,6 +407,46 @@ app.get("/tickets", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /tickets/{id}:
+ *   put:
+ *     summary: Update a ticket by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               state:
+ *                 type: string
+ *               plannedDate:
+ *                 type: string
+ *               inizio:
+ *                 type: string
+ *               fine:
+ *                 type: string
+ *               worker:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Ticket updated successfully
+ *       400:
+ *         description: Bad request
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal server error
+ */
 app.put("/tickets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { state, plannedDate, inizio, fine, worker } = req.body;
@@ -396,8 +488,34 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
   }
 });
 
+app.delete("/tickets/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const ticket = await Ticket.findByIdAndDelete(id);
+    if (!ticket) {
+      return res.status(404).json({ error: "Ticket non trovato" });
+    }
+
+    res.json({ message: "Ticket eliminato con successo" });
+  } catch (error) {
+    res.status(500).json({ error: "Errore durante l'eliminazione del ticket" });
+  }
+});
+
 const Place = require("./models/newModels").Place; // Importa il modello Place
 
+/**
+ * @swagger
+ * /places:
+ *   get:
+ *     summary: Get all places
+ *     responses:
+ *       200:
+ *         description: Places retrieved successfully
+ *       500:
+ *         description: Internal server error
+ */
 app.get("/places", async (req, res) => {
   try {
     // I posti sono un array di oggetti con il campo "name" e "floors"
@@ -411,6 +529,41 @@ app.get("/places", async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /places:
+ *   post:
+ *     summary: Create a new place
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               floors:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     floor:
+ *                       type: integer
+ *                     rooms:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *     responses:
+ *       201:
+ *         description: Place created successfully
+ *       400:
+ *         description: Bad request
+ *       500:
+ *         description: Internal server error
+ */
 app.post("/places", authenticateToken, async (req, res) => {
   const { name, floors } = req.body;
 
@@ -451,6 +604,28 @@ app.post("/places", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /follows:
+ *   post:
+ *     summary: Follow a ticket
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               ticketId:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Follow created successfully
+ *       500:
+ *         description: Internal server error
+ */
 app.post("/follows", authenticateToken, async (req, res) => {
   const { ticketId } = req.body;
 
@@ -469,6 +644,27 @@ app.post("/follows", authenticateToken, async (req, res) => {
 
 // Viene triggerato ogni volta che un utente esce dalla pagina updates (per aggiornare last_action)
 
+/**
+ * @swagger
+ * /users/{id}:
+ *   put:
+ *     summary: Update user's last action
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
 app.put("/users/:id", authenticateToken, async (req, res) => {
   //updates the last_action field of the user
   try {
@@ -486,10 +682,4 @@ app.put("/users/:id", authenticateToken, async (req, res) => {
   }
 });
 
-// // Export the app and server for testing
-
-const server = app.listen(port, () => {
-  console.log(`Server in esecuzione su http://localhost:${port}`);
-});
-
-module.exports = { app, server };
+module.exports = app;

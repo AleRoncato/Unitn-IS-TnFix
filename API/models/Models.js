@@ -31,7 +31,18 @@ const TicketInfoSchema = new mongoose.Schema(
       ref: "Ticket",
       required: true,
     },
-    state: { type: String, default: "In accettazione" },
+    state: {
+      type: String,
+      enum: [
+        "In accettazione",
+        "Accettati",
+        "Programmati",
+        "In risoluzione",
+        "Closed",
+      ],
+      default: "In accettazione",
+    },
+
     plannedDate: { type: Date, default: null },
     inizio: { type: Date, default: null },
     fine: { type: Date, default: null },

@@ -13,15 +13,16 @@ app.use(express.json());
 // Abilita CORS solo per il frontend
 app.use(cors({ origin: "http://localhost:5173" }));
 
-
 // ============= //
 // EFFECTIVE API //
 // ============= //
 
-const User = require("./models/newModels").User; // Importa il modello User
+const User = require("./models/Models").User; // Importa il modello User
 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+const authenticateToken = require("./middleware/AUTH"); // Correct the import
 
 /**
  * @swagger
@@ -163,8 +164,12 @@ app.post("/login", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.delete("/users/:username", async (req, res) => {
+app.delete("/users/:username", authenticateToken, async (req, res) => {
   const { username } = req.params;
+
+  if (req.user.role != "admin") {
+    res.status(403).json({ error: "Non sei autorizzato" });
+  }
 
   try {
     const user = await User.findOneAndDelete({ username });
@@ -180,11 +185,9 @@ app.delete("/users/:username", async (req, res) => {
   }
 });
 
-const authenticateToken = require("./middleware/AUTH"); // Correct the import
-
-const Ticket = require("./models/newModels").Ticket; // Importa il modello Ticket
-const TicketInfo = require("./models/newModels").TicketInfo; // Importa il modello TicketInfo
-const Follow = require("./models/newModels").Follow; // Importa il modello Follow
+const Ticket = require("./models/Models").Ticket; // Importa il modello Ticket
+const TicketInfo = require("./models/Models").TicketInfo; // Importa il modello TicketInfo
+const Follow = require("./models/Models").Follow; // Importa il modello Follow
 
 /**
  * @swagger
@@ -290,6 +293,48 @@ app.post("/tickets", authenticateToken, async (req, res) => {
  *     responses:
  *       200:
  *         description: Updates retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   building:
+ *                     type: string
+ *                   floor:
+ *                     type: string
+ *                   room:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   image:
+ *                     type: string
+ *                   ticketInfo:
+ *                     type: object
+ *                     properties:
+ *                       ticketId:
+ *                         type: string
+ *                       creatore:
+ *                         type: string
+ *                       state:
+ *                         type: string
+ *                       plannedDate:
+ *                         type: string
+ *                       inizio:
+ *                         type: string
+ *                       fine:
+ *                         type: string
+ *                       tecnicoGestore:
+ *                         type: string
+ *                       lavoratoreAssegnato:
+ *                         type: string
  *       404:
  *         description: User not found
  *       500:
@@ -314,35 +359,69 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
 /**
  * @swagger
- * /tickets:
+ * /tickets/{state}:
  *   get:
- *     summary: Get tickets by state
+ *     summary: Get ticket based on the state and the user role
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: query
+ *       - in: path
  *         name: state
  *         required: true
  *         schema:
  *           type: string
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
  *     responses:
  *       200:
- *         description: Tickets retrieved successfully
+ *         description: Updates retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   building:
+ *                     type: string
+ *                   floor:
+ *                     type: string
+ *                   room:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   image:
+ *                     type: string
+ *                   ticketInfo:
+ *                     type: object
+ *                     properties:
+ *                       ticketId:
+ *                         type: string
+ *                       creatore:
+ *                         type: string
+ *                       state:
+ *                         type: string
+ *                       plannedDate:
+ *                         type: string
+ *                       inizio:
+ *                         type: string
+ *                       fine:
+ *                         type: string
+ *                       tecnicoGestore:
+ *                         type: string
+ *                       lavoratoreAssegnato:
+ *                         type: string
  *       400:
- *         description: Bad request
+ *         description: Lo state è obbligatorio
  *       500:
- *         description: Internal server error
+ *         description: Errore nel recupero dei ticket
  */
-app.get("/tickets", authenticateToken, async (req, res) => {
-  const { state } = req.query;
+app.get("/tickets/:state", authenticateToken, async (req, res) => {
+  const { state } = req.params;
 
   if (!state) {
     return res.status(400).json({ error: "Lo state è obbligatorio" });
@@ -488,14 +567,45 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * @swagger
+ * /tickets/{id}:
+ *   delete:
+ *     summary: Delets a ticket by ID if not already accepted and is created by the user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ticket eliminato con successo
+ *       400:
+ *         description: Ticket non trovato
+ *       500:
+ *         description: Errore durante l'eliminazione del ticket
+ */
+
 app.delete("/tickets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
+  user = req.user.userId;
 
   try {
-    const ticket = await Ticket.findByIdAndDelete(id);
+    const ticket = await Ticket.findOne({
+      _id: id,
+      "ticketInfo.creatore": user,
+      state: "In accettazione",
+    });
+
     if (!ticket) {
       return res.status(404).json({ error: "Ticket non trovato" });
     }
+
+    ticketInfo = await TicketInfo.findByIdAndDelete(ticket.ticketInfo);
+    await ticket.delete();
 
     res.json({ message: "Ticket eliminato con successo" });
   } catch (error) {
@@ -503,7 +613,7 @@ app.delete("/tickets/:id", authenticateToken, async (req, res) => {
   }
 });
 
-const Place = require("./models/newModels").Place; // Importa il modello Place
+const Place = require("./models/Models").Place; // Importa il modello Place
 
 /**
  * @swagger
@@ -513,14 +623,33 @@ const Place = require("./models/newModels").Place; // Importa il modello Place
  *     responses:
  *       200:
  *         description: Places retrieved successfully
+ *         content:
+ *           application/json:
+ *            schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   _id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   floors:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         piano:
+ *                           type: integer
+ *                         stanze:
+ *                           type: array
+ *                           items:
+ *                             type: string
  *       500:
  *         description: Internal server error
  */
 app.get("/places", async (req, res) => {
   try {
-    // I posti sono un array di oggetti con il campo "name" e "floors"
-    // floors è un array di oggetti con il campo "floor" e "rooms"
-    // rooms è un array di stringhe
     const places = await Place.find();
 
     res.json(places);
@@ -570,18 +699,6 @@ app.post("/places", authenticateToken, async (req, res) => {
   if (!name || !floors) {
     return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
   }
-
-  //Floors deve essere un array di oggetti con il campo "floor" e "rooms"
-  // floors: [
-  //   {
-  //     floor: 1,
-  //     rooms: ["Room 101", "Room 102", "Room 103"],
-  //   },
-  //   {
-  //     floor: 2,
-  //     rooms: ["Room 201", "Room 202", "Room 203"],
-  //   },
-  // ],
 
   try {
     console.log(floors);

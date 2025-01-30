@@ -391,6 +391,10 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
       res.json(tickets);
     }
+
+    user.last_action = Date.now();
+    await user.save();
+
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
@@ -1004,5 +1008,25 @@ app.post("/follows", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Errore nel seguire il ticket" });
   }
 });
+
+// app.put("/action/:userId", authenticateToken, async (req, res) => {
+//   const { userId } = req.params;
+//   try {
+//     const user = await User.findById(userId);
+
+//     if (!user) {
+//       return res.status(404).json({ error: "Utente non trovato" });
+//     }
+
+//     user.last_action = Date.now();
+//     await user.save();
+
+//     res.json({ message: "Ultima azione aggiornata con successo" });
+//   } catch (error) {
+//     res
+//       .status(500)
+//       .json({ error: "Errore nell'aggiornamento dell'ultima azione" });
+//   }
+// });
 
 module.exports = app;

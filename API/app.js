@@ -24,6 +24,10 @@ const jwt = require("jsonwebtoken");
 
 const authenticateToken = require("./middleware/AUTH"); // Correct the import
 
+app.get("/", (req, res) => {
+  res.send("API TNFix");
+});
+
 /**
  * @swagger
  * /register:
@@ -144,15 +148,14 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// NEED to modify all the other stuff on the database referncing the user
 /**
  * @swagger
- * /users/{username}:
+ * /users/{UserId}:
  *   delete:
- *     summary: Delete a user by username
+ *     summary: Delete a user by his ID
  *     parameters:
  *       - in: path
- *         name: username
+ *         name: UserId
  *         required: true
  *         schema:
  *           type: string
@@ -164,15 +167,15 @@ app.post("/login", async (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.delete("/users/:username", authenticateToken, async (req, res) => {
-  const { username } = req.params;
+app.delete("/users/:userId", authenticateToken, async (req, res) => {
+  const { userId } = req.params;
 
   if (req.user.role != "admin") {
     res.status(403).json({ error: "Non sei autorizzato" });
   }
 
   try {
-    const user = await User.findOneAndDelete({ username });
+    const user = await User.findByIdAndDelete(userId);
     if (!user) {
       return res.status(404).json({ error: "Utente non trovato" });
     }
@@ -335,7 +338,7 @@ app.post("/tickets", authenticateToken, async (req, res) => {
  *                         type: string
  *                       lavoratoreAssegnato:
  *                         type: string
- *       404:
+ *       403:
  *         description: User not found
  *       500:
  *         description: Internal server error
@@ -344,14 +347,50 @@ app.get("/updates", authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
     if (!user) {
-      return res.status(404).json({ error: "Utente non trovato" });
+      return res.status(403).json({ error: "Utente non trovato" });
     }
 
     const tickets = await Ticket.find({
       updatedAt: { $gt: user.last_action },
     }).populate("ticketInfo");
 
-    res.json(tickets);
+    if (req.user.role === "tecnico") {
+      const extraTickets = await Ticket.find({
+        "ticketInfo.tecnicoGestore": req.user.userId,
+        "ticketInfo.state": "Confermare",
+      }).populate("ticketInfo");
+
+      const acceptTickets = await Ticket.find({
+        "ticketInfo.state": "In accettazione",
+      }).populate("ticketInfo");
+
+      const filteredTickets = tickets.filter(
+        (ticket) =>
+          ticket.ticketInfo.tecnicoGestore == req.user.userId &&
+          ticket.ticketInfo.state != "Confermare"
+      );
+
+      res.json([...extraTickets, ...filteredTickets, ...acceptTickets]);
+    } else if (req.user.role === "worker") {
+      const filteredWorkerTickets = tickets.filter(
+        (ticket) => ticket.ticketInfo.lavoratoreAssegnato == req.user.userId
+      );
+
+      res.json(filteredWorkerTickets);
+    } else {
+      UserTickets = tickets.filter(
+        (ticket) => ticket.ticketInfo.creatore == req.user.userId
+      );
+
+      const followedTickets = await Follow.find({
+        user: req.user.userId,
+        "ticket.updatedAt": { $gt: user.last_action },
+      }).populate("ticket");
+
+      tickets = [...UserTickets, ...followedTickets.map((f) => f.ticket)];
+
+      res.json(tickets);
+    }
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
@@ -433,12 +472,18 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
   const skip = (page - 1) * limit;
 
   if (req.user.role === "worker" || req.user.role === "tecnico") {
-    // MANAGING PART
-
     try {
       const tickets = await Ticket.find({
         state: state,
       }).populate("ticketInfo");
+
+      if (state != "In accettazione") {
+        tickets = tickets.filter(
+          (ticket) =>
+            ticket.ticketInfo.tecnicoGestore == req.user.userId ||
+            ticket.ticketInfo.lavoratoreAssegnato == req.user.userId
+        );
+      }
 
       const paginatedTickets = tickets.slice(skip, skip + limit);
 
@@ -453,10 +498,6 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
       res.status(500).json({ error: "Errore nel recupero dei ticket" });
     }
   } else {
-    // USER PART
-    // Gets all the tickets that the user is following
-    // and all the ones that the user created
-
     try {
       const followedTickets = await Follow.find({
         user: req.user.userId,
@@ -471,8 +512,12 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
         ...followedTickets.map((f) => f.ticket),
         ...createdTickets,
       ];
-
       const paginatedTickets = allTickets.slice(skip, skip + limit);
+
+      const user = await User.findById(req.user.userId);
+
+      user.last_action = Date.now();
+      await user.save();
 
       res.json({
         total: allTickets.length,
@@ -508,13 +553,9 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
  *             properties:
  *               state:
  *                 type: string
- *               plannedDate:
- *                 type: string
  *               inizio:
  *                 type: string
  *               fine:
- *                 type: string
- *               worker:
  *                 type: string
  *     responses:
  *       200:
@@ -522,15 +563,29 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
  *       400:
  *         description: Bad request
  *       403:
- *         description: Forbidden
+ *         description: Not Authorized
+ *       405:
+ *         description: Ticket not found
  *       500:
- *         description: Internal server error
+ *         description: Errore nell'aggiornamento del ticket
  */
 app.put("/tickets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { state, plannedDate, inizio, fine, worker } = req.body;
+  const { state, inizio, fine } = req.body;
 
   try {
+    if (req.user.role === "user") {
+      return res.status(403).json({ error: "Non sei autorizzato" });
+    }
+
+    const ticket = await Ticket.findOne({
+      _id: id,
+    });
+
+    if (!ticket) {
+      return res.status(405).json({ error: "Ticket non trovato" });
+    }
+
     const ticketInfo = await TicketInfo.findOne({
       ticketId: id,
     });
@@ -539,31 +594,223 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
       return res.status(405).json({ error: "Ticket non trovato" });
     }
 
-    if (req.user.role === "user") {
-      return res.status(403).json({ error: "Non sei autorizzato" });
+    if (state == "In risoluzione") {
+      if (!inizio)
+        return res.status(400).json({ error: "L'inizio è obbligatorio" });
+
+      ticketInfo.inizio = inizio;
+      ticketInfo.state = "In risoluzione";
     }
 
-    if (state) ticketInfo.state = state;
+    if (state == "Closed") {
+      if (!fine)
+        return res.status(400).json({ error: "La fine è obbligatoria" });
 
-    // Saves the user id of the worker or the technician
-    // when state is "Accettato" or "In lavorazione"
-    if (state == "Accettato") ticketInfo.tecnicoGestore = req.user.userId;
+      ticketInfo.fine = fine;
 
-    if (state == "In lavorazione") {
-      if (!worker)
-        return res.status(400).json({ error: "Il lavoratore è obbligatorio" });
-      ticketInfo.lavoratoreAssegnato = worker;
+      if (req.user.role === "worker") {
+        ticketInfo.state = "Confermare";
+      } else {
+        ticketInfo.state = "Closed";
+      }
     }
-
-    if (plannedDate) ticketInfo.plannedDate = plannedDate;
-    if (inizio) ticketInfo.inizio = inizio;
-    if (fine) ticketInfo.fine = fine;
 
     await ticketInfo.save();
 
     res.json({ message: "Ticket updated with success." });
   } catch (error) {
     res.status(500).json({ error: "Errore nell'aggiornamento del ticket" });
+  }
+});
+
+/**
+ * @swagger
+ * /tickets/{id}/schedule:
+ *   put:
+ *     summary: Schedule a ticket by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *           type: object
+ *           properties:
+ *             plannedDate:
+ *               type: date
+ *             extimatedTime:
+ *               type: number
+ *             worker:
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Ticket scheduled successfully
+ *       400:
+ *         description: Bad request
+ *       403:
+ *         description: Not Authorized
+ *       405:
+ *         description: Ticket not found
+ *       500:
+ *         description: Errore nella programmazione del ticket
+ *
+ *
+ */
+app.put("/tickets/:id/schedule", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { plannedDate, extimatedTime, worker } = req.body;
+
+  try {
+    const ticket = await Ticket.findOne({
+      _id: id,
+      state: "Accettato",
+    });
+
+    if (!ticket) {
+      return res.status(403).json({ error: "Ticket non trovato" });
+    }
+
+    const ticketInfo = await TicketInfo.findOne({
+      ticketId: id,
+    });
+
+    if (!plannedDate)
+      return res
+        .status(400)
+        .json({ error: "La data programmata è obbligatoria" });
+
+    ticketInfo.plannedDate = plannedDate;
+    ticketInfo.extimatedTime = extimatedTime;
+
+    if (worker) ticketInfo.lavoratoreAssegnato = worker;
+
+    ticketInfo.state = "Programmato";
+
+    await ticketInfo.save();
+
+    res.json({ message: "Ticket programmato con successo" });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nella programmazione del ticket" });
+  }
+});
+
+/**
+ * @swagger
+ * /tickets/{id}/accept:
+ *   put:
+ *     summary: Accept a ticket by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Ticket accepted successfully
+ *       405:
+ *         description: Ticket not found
+ *       500:
+ *         description: Errore nella programmazione del ticket
+ *
+ */
+app.put("/tickets/:id/accept", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const ticket = await Ticket.findOne({
+      _id: id,
+      state: "In accettazione",
+    });
+
+    if (!ticket) {
+      return res.status(405).json({ error: "Ticket non trovato" });
+    }
+
+    const ticketInfo = await TicketInfo.findOne({
+      ticketId: id,
+    });
+
+    ticketInfo.state = "Accettato";
+    ticketInfo.tecnicoGestore = req.user.userId;
+
+    await ticketInfo.save();
+
+    res.json({ message: "Ticket accettato con successo" });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nell'accettazione del ticket" });
+  }
+});
+
+/**
+ * @swagger
+ * /tickets/{id}/decline:
+ *   put:
+ *     summary: Decline a ticket by ID given a reason
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *           type: object
+ *           properties:
+ *             declineReason:
+ *               type: string
+ *     responses:
+ *       200:
+ *         description: Ticket accepted successfully
+ *       405:
+ *         description: Ticket not found
+ *       500:
+ *         description: Errore nella programmazione del ticket
+ *
+ */
+app.put("/tickets/:id/decline", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  const { declineReason } = req.body;
+
+  try {
+    const ticket = await Ticket.findOne({
+      _id: id,
+      state: "In accettazione",
+    });
+
+    if (!ticket) {
+      return res.status(403).json({ error: "Ticket non trovato" });
+    }
+
+    const ticketInfo = await TicketInfo.findOne({
+      ticketId: id,
+    });
+
+    ticketInfo.state = "Rifiutato";
+    ticketInfo.tecnicoGestore = req.user.userId;
+    ticketInfo.declineReason = declineReason;
+
+    ticketInfo.expiresIn = Date.now() + 1000 * 60 * 60 * 24 * 14; // 14 days
+
+    await ticketInfo.save();
+
+    res.json({ message: "Ticket rifiutato con successo" });
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel rifiuto del ticket" });
   }
 });
 
@@ -588,7 +835,6 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
  *       500:
  *         description: Errore durante l'eliminazione del ticket
  */
-
 app.delete("/tickets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   user = req.user.userId;
@@ -756,46 +1002,6 @@ app.post("/follows", authenticateToken, async (req, res) => {
     res.status(201).json(newFollow);
   } catch (error) {
     res.status(500).json({ error: "Errore nel seguire il ticket" });
-  }
-});
-
-// Viene triggerato ogni volta che un utente esce dalla pagina updates (per aggiornare last_action)
-
-/**
- * @swagger
- * /users/{id}:
- *   put:
- *     summary: Update user's last action
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: User updated successfully
- *       404:
- *         description: User not found
- *       500:
- *         description: Internal server error
- */
-app.put("/users/:id", authenticateToken, async (req, res) => {
-  //updates the last_action field of the user
-  try {
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      { last_action: Date.now() },
-      { new: true }
-    );
-    if (!user) {
-      return res.status(404).json({ error: "Utente non trovato" });
-    }
-    res.status(200).json({ message: "Utente aggiornato con successo" });
-  } catch (error) {
-    res.status(500).json({ error: "Errore nell'aggiornamento dell'utente" });
   }
 });
 

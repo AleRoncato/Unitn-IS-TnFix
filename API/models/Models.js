@@ -35,15 +35,21 @@ const TicketInfoSchema = new mongoose.Schema(
       type: String,
       enum: [
         "In accettazione",
-        "Accettati",
-        "Programmati",
+        "Accettato",
+        "Rifiutato",
+        "Programmato",
+        "Confermare",
         "In risoluzione",
         "Closed",
       ],
       default: "In accettazione",
     },
 
+    declineReason: { type: String, default: "" },
+
     plannedDate: { type: Date, default: null },
+    extimatedTime: { type: Number, default: 0 },
+
     inizio: { type: Date, default: null },
     fine: { type: Date, default: null },
     creatore: {

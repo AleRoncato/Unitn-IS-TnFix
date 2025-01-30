@@ -66,12 +66,12 @@ paths:
           description: Bad request
         '500':
           description: Internal server error
-  /users/{username}:
+  /users/{UserId}:
     delete:
-      summary: Delete a user by username
+      summary: Delete a user by his ID
       parameters:
         - in: path
-          name: username
+          name: UserId
           required: true
           schema:
             type: string
@@ -165,7 +165,7 @@ paths:
                           type: string
                         lavoratoreAssegnato:
                           type: string
-        '404':
+        '403':
           description: User not found
         '500':
           description: Internal server error
@@ -249,13 +249,9 @@ paths:
               properties:
                 state:
                   type: string
-                plannedDate:
-                  type: string
                 inizio:
                   type: string
                 fine:
-                  type: string
-                worker:
                   type: string
       responses:
         '200':
@@ -263,9 +259,11 @@ paths:
         '400':
           description: Bad request
         '403':
-          description: Forbidden
+          description: Not Authorized
+        '405':
+          description: Ticket not found
         '500':
-          description: Internal server error
+          description: Errore nell'aggiornamento del ticket
     delete:
       summary: Delets a ticket by ID if not already accepted and is created by the user
       security:
@@ -283,6 +281,86 @@ paths:
           description: Ticket non trovato
         '500':
           description: Errore durante l'eliminazione del ticket
+  /tickets/{id}/schedule:
+    put:
+      summary: Schedule a ticket by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: null
+            type: object
+            properties:
+              plannedDate:
+                type: date
+              extimatedTime:
+                type: number
+              worker:
+                type: string
+      responses:
+        '200':
+          description: Ticket scheduled successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Not Authorized
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
+  /tickets/{id}/accept:
+    put:
+      summary: Accept a ticket by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ticket accepted successfully
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
+  /tickets/{id}/decline:
+    put:
+      summary: Decline a ticket by ID given a reason
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: null
+            type: object
+            properties:
+              declineReason:
+                type: string
+      responses:
+        '200':
+          description: Ticket accepted successfully
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
   /places:
     get:
       summary: Get all places
@@ -361,24 +439,6 @@ paths:
       responses:
         '201':
           description: Follow created successfully
-        '500':
-          description: Internal server error
-  /users/{id}:
-    put:
-      summary: Update user's last action
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: User updated successfully
-        '404':
-          description: User not found
         '500':
           description: Internal server error
 tags: []

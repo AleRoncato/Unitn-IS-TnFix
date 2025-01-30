@@ -59,7 +59,7 @@ mongoose
     const swaggerYaml = yaml.dump(swaggerDocs);
 
     // Scrivi il file YAML
-    fs.writeFileSync("../Documentazione/API/swagger.yaml", swaggerYaml, "utf8");
+    fs.writeFileSync("../Doc/API/swagger.yaml", swaggerYaml, "utf8");
 
     // Mostra la documentazione Swagger all'indirizzo /api-docs
     app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocs));

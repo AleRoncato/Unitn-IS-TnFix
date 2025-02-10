@@ -96,8 +96,8 @@ const PlaceSchema = new mongoose.Schema(
     name: { type: String, required: true },
     floors: [
       {
-        piano: { type: String, required: true },
-        stanze: [{ type: String }],
+        floor: { type: String, required: true },
+        rooms: [{ type: String }],
       },
     ],
   },

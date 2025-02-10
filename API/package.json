@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "jest --detectOpenHandles --forceExit",
+    "test": "jest --setupFiles dotenv/config --detectOpenHandles --forceExit ",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "node -r dotenv/config index.js"
   },
   "keywords": [],
   "author": "",

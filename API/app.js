@@ -96,7 +96,6 @@ app.post("/register", async (req, res) => {
 
     res.status(201).json({ message: "Utente registrato con successo" });
   } catch (error) {
-    console.error("Errore nella registrazione:", error);
     res.status(500).json({ error: "Errore interno del server" });
   }
 });
@@ -170,11 +169,11 @@ app.post("/login", async (req, res) => {
 app.delete("/users/:userId", authenticateToken, async (req, res) => {
   const { userId } = req.params;
 
-  if (req.user.role != "admin") {
-    res.status(403).json({ error: "Non sei autorizzato" });
-  }
-
   try {
+    if (req.user.role != "admin") {
+      res.status(403).json({ error: "Non sei autorizzato" });
+    }
+
     const user = await User.findByIdAndDelete(userId);
     if (!user) {
       return res.status(404).json({ error: "Utente non trovato" });
@@ -182,9 +181,7 @@ app.delete("/users/:userId", authenticateToken, async (req, res) => {
 
     res.json({ message: "Utente eliminato con successo" });
   } catch (error) {
-    res
-      .status(500)
-      .json({ error: "Errore durante l'eliminazione dell'utente" });
+    res.status(500);
   }
 });
 
@@ -243,8 +240,6 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       room,
     });
 
-    console.log(existingTicket);
-
     if (existingTicket) {
       // Aggiungi l'utente come follower del ticket
       const newFollow = new Follow({
@@ -280,7 +275,7 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       });
     });
 
-    res.status(201).json({ message: "Ticket creato con successo." });
+    res.status(202).json({ message: "Ticket creato con successo." });
   } catch (error) {
     res.status(500).json({ error: "Errore nella creazione del ticket." });
   }
@@ -378,7 +373,7 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
       res.json(filteredWorkerTickets);
     } else {
-      UserTickets = tickets.filter(
+      const userTickets = tickets.filter(
         (ticket) => ticket.ticketInfo.creatore == req.user.userId
       );
 
@@ -387,14 +382,16 @@ app.get("/updates", authenticateToken, async (req, res) => {
         "ticket.updatedAt": { $gt: user.last_action },
       }).populate("ticket");
 
-      tickets = [...UserTickets, ...followedTickets.map((f) => f.ticket)];
+      const allTickets = [
+        ...userTickets,
+        ...followedTickets.map((f) => f.ticket),
+      ];
 
-      res.json(tickets);
+      res.json(allTickets);
     }
 
     user.last_action = Date.now();
     await user.save();
-
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
@@ -477,7 +474,7 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
 
   if (req.user.role === "worker" || req.user.role === "tecnico") {
     try {
-      const tickets = await Ticket.find({
+      let tickets = await Ticket.find({
         state: state,
       }).populate("ticketInfo");
 
@@ -578,7 +575,7 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
   const { state, inizio, fine } = req.body;
 
   try {
-    if (req.user.role === "user") {
+    if (req.user.role != "user") {
       return res.status(403).json({ error: "Non sei autorizzato" });
     }
 
@@ -848,7 +845,7 @@ app.delete("/tickets/:id", authenticateToken, async (req, res) => {
       _id: id,
       "ticketInfo.creatore": user,
       state: "In accettazione",
-    });
+    }).populate("ticketInfo");
 
     if (!ticket) {
       return res.status(404).json({ error: "Ticket non trovato" });
@@ -951,20 +948,16 @@ app.post("/places", authenticateToken, async (req, res) => {
   }
 
   try {
-    console.log(floors);
     const newPlace = new Place({
       name,
       floors: floors.map((floor) => ({
-        piano: floor.floor,
-        stanze: floor.rooms.map((room) => room),
+        floor: floor.floor,
+        rooms: floor.rooms.map((room) => room),
       })),
     });
 
-    console.log(newPlace);
-
     await newPlace.save();
 
-    console.log("Done");
     res.status(201).json(newPlace);
   } catch (error) {
     res.status(500).json({ error: "Errore nella creazione del luogo" });
@@ -1009,24 +1002,51 @@ app.post("/follows", authenticateToken, async (req, res) => {
   }
 });
 
-// app.put("/action/:userId", authenticateToken, async (req, res) => {
-//   const { userId } = req.params;
-//   try {
-//     const user = await User.findById(userId);
+// TESTING ONLY
 
-//     if (!user) {
-//       return res.status(404).json({ error: "Utente non trovato" });
-//     }
+app.put("/test", authenticateToken, async (req, res) => {
+  const user = req.user.role;
+  if (user == "admin") {
+    await ticketInfo.deleteMany({}, (err) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ error: "Errore nella cancellazione dei ticket" });
+      } else {
+        res.status(200).json({ message: "Ticket eliminati con successo" });
+      }
+    });
 
-//     user.last_action = Date.now();
-//     await user.save();
+    await ticket.deleteMany({}, (err) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ error: "Errore nella cancellazione dei ticket" });
+      } else {
+        res.status(200).json({ message: "Ticket eliminati con successo" });
+      }
+    });
 
-//     res.json({ message: "Ultima azione aggiornata con successo" });
-//   } catch (error) {
-//     res
-//       .status(500)
-//       .json({ error: "Errore nell'aggiornamento dell'ultima azione" });
-//   }
-// });
+    await follow.deleteMany({}, (err) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ error: "Errore nella cancellazione dei Follow" });
+      } else {
+        res.status(200).json({ message: "Follow eliminati con successo" });
+      }
+    });
+
+    await places.deleteMany({}, (err) => {
+      if (err) {
+        res
+          .status(500)
+          .json({ error: "Errore nella cancellazione dei places" });
+      } else {
+        res.status(200).json({ message: "Places eliminati con successo" });
+      }
+    });
+  }
+});
 
 module.exports = app;

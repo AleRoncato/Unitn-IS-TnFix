@@ -229,8 +229,11 @@ app.get("/workers", authenticateToken, async (req, res) => {
 app.delete("/users/:userId", authenticateToken, async (req, res) => {
   const { userId } = req.params;
 
+  const user = await User.findById(req.user.userId);
+  role = user.ruolo;
+
   try {
-    if (req.user.role != "admin") {
+    if (role != "admin") {
       res.status(403).json({ error: "Non sei autorizzato" });
     }
 
@@ -409,7 +412,7 @@ app.get("/updates", authenticateToken, async (req, res) => {
       updatedAt: { $gt: user.last_action },
     });
 
-    if (req.user.role === "tecnico") {
+    if (user.role === "tecnico") {
       const extraTickets = await Ticket.find({
         state: "In accettazione",
         tecnicoGestore: req.user.userId,
@@ -426,7 +429,7 @@ app.get("/updates", authenticateToken, async (req, res) => {
       );
 
       res.json([...extraTickets, ...filteredTickets, ...acceptTickets]);
-    } else if (req.user.role === "worker") {
+    } else if (user.role === "worker") {
       const filteredWorkerTickets = tickets.filter(
         (ticket) => ticket.lavoratoreAssegnato == req.user.userId
       );
@@ -459,6 +462,7 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
     user.last_action = Date.now();
     await user.save();
+    
   } catch (error) {
     res.status(500).json({ error: "Errore nel recupero dei ticket" });
   }
@@ -542,7 +546,10 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
   const limit = parseInt(req.query.limit) || 20;
   const skip = (page - 1) * limit;
 
-  if (req.user.role === "worker" || req.user.role === "tecnico") {
+  const user = await User.findById(req.user.userId);
+  role = user.ruolo;
+
+  if (role === "worker" || role === "tecnico") {
     try {
       let tickets = await Ticket.find({
         state: state,
@@ -557,6 +564,11 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
       }
 
       const paginatedTickets = tickets.slice(skip, skip + limit);
+
+      console.log(paginatedTickets);
+
+      user.last_action = Date.now();
+      await user.save();
 
       // Returns the total number of tickets, the current page, the limit and the tickets
       res.json({
@@ -586,7 +598,7 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
 
       const paginatedTickets = allTickets.slice(skip, skip + limit);
 
-      const user = await User.findById(req.user.userId);
+      console.log(paginatedTickets);
 
       user.last_action = Date.now();
       await user.save();
@@ -645,8 +657,11 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { state, inizio, fine } = req.body;
 
+  const user = await User.findById(req.user.userId);
+  role = user.ruolo;
+
   try {
-    if (req.user.role === "user") {
+    if (role === "user") {
       return res.status(403).json({ error: "Non sei autorizzato" });
     }
 
@@ -673,7 +688,7 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
 
       ticket.fine = fine;
 
-      if (req.user.role === "worker") {
+      if (role === "worker") {
         ticket.state = "Confermare";
       } else {
         ticket.state = "Closed";

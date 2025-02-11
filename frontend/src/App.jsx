@@ -16,7 +16,7 @@ function App() {
           <Route path="/" element={<LoginForm />} />
           <Route path="/login" element={<LoginForm />} />
           {/* <Route element={<PrivateRoutes />}> */}
-          <Route path="/home" element={<Home />} />
+          <Route path="/home/:status" element={<Home />} />
           <Route path="/add-ticket" element={<AddPage />} />
           {/* </Route> */}
           <Route

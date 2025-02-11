@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios'; // Import Axios
 import { X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -13,8 +13,41 @@ const AddPage = () => {
 
     const [description, setDescription] = useState(''); // Add description state
     const [image, setImage] = useState(''); // Add image state
+    const [buildingOptions, setbuildingOptions] = useState([]); // Add buildingOptions state
 
     const navigate = useNavigate()
+
+    useEffect(() => {
+        axios.get('http://localhost:5000/places', {
+            headers: {
+                accept: 'application/json',
+            },
+        })
+            .then((response) => {
+                setbuildingOptions(response.data);
+
+            })
+            .catch((error) => {
+                console.error(error);
+                alert('An error occurred. Please try again later');
+            });
+
+
+    }, []);
+
+    const handlebuildingChange = (e) => {
+        setBuilding(e.target.value);
+        setFloor('');
+        setRoom('');
+    };
+    const handleFloorChange = (e) => {
+        setFloor(e.target.value);
+        setRoom('');
+    };
+
+    const handleRoomChange = (e) => {
+        setRoom(e.target.value);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -54,7 +87,7 @@ const AddPage = () => {
 
     return (
 
-        <div className="inset-[5%] absolute overflow-hidden bg-white bg-opacity-10 rounded-lg shadow-lg backdrop-blur-sm border border-white border-opacity-30 text-white p-4">
+        <div className="inset-[5%] absolute overflow-scroll bg-white bg-opacity-10 rounded-lg shadow-lg backdrop-blur-sm border border-white border-opacity-30 text-white p-4">
             <div className='flex-col h-full justify items-center'>
 
                 <div className="absolute top-5 right-5 cursor-pointer">
@@ -62,7 +95,7 @@ const AddPage = () => {
                         <X className="h-10 w-10 text-white" size={32} />
                     </Link>
                 </div>
-                <form onSubmit={handleSubmit} className=" *:mx-[10%] font-mono font-medium text-lg grid grid-cols-2 gap-4 h-full">
+                <form onSubmit={handleSubmit} className=" *:mx-[10%]  font-mono font-medium text-lg grid grid-cols-2 gap-4 h-full">
                     <h1 className=" special-font hero-heading flex-center mx-0 my-8 col-span-2"><b>Create Ticket</b></h1>
                     <div className="col-span-2">
                         <label htmlFor="title" className="block mb-1">Title: (*)</label>
@@ -89,6 +122,50 @@ const AddPage = () => {
                             <option className="text-white" value="Other">Other</option>
                         </select>
                     </div>
+
+                    {/* SHIT HERE */}
+
+
+                    <div>
+                        <label htmlFor="building" className="block mb-1">Building:</label>
+
+
+                        <select onChange={handlebuildingChange} value={building} className={`w-full p-2 bg-neutral-600 rounded ${building === '' ? 'text-neutral-500' : ''}`}>
+                            <option className='text-neutral-500' value="">Select building</option>
+                            {buildingOptions.map((building, index) => (
+                                <option key={index} className='text-white' value={building.name}>{building.name}</option>
+                            ))}
+                        </select>
+
+                    </div>
+                    <div>
+                        <label>
+                            <p className='text-white font-bold'>Piano:</p>
+
+                            <select onChange={handleFloorChange} value={floor} className={`w-full p-2 bg-neutral-600 rounded ${floor === '' ? 'text-neutral-500' : ''}`}>
+                                <option className='text-neutral-500' value="">Select Piano</option>
+                                {buildingOptions
+                                    .find(b => b.name === building)?.floors.map((floor, index) => (
+                                        <option key={index} className='text-white' value={floor.floor}>{floor.floor}</option>
+                                    ))}
+                            </select>
+                        </label>
+                    </div>
+                    <div>
+                        <label>
+                            <p className='text-white font-bold'>Zona:</p>
+
+                            <select onChange={handleRoomChange} value={room} className={`w-full p-2 bg-neutral-600 rounded ${room === '' ? 'text-neutral-500' : ''}`}>
+                                <option className='text-neutral-500' value="">Select Zona</option>
+                                {buildingOptions
+                                    .find(b => b.name === building)?.floors.find(f => f.floor === floor)?.rooms.map((zone, index) => (
+                                        <option key={index} className='text-white' value={zone}>{zone}</option>
+                                    ))}
+                            </select>
+                        </label>
+                    </div>
+
+                    {/* 
                     <div>
                         <label htmlFor="building" className="block mb-1">Building:</label>
                         <select
@@ -133,7 +210,7 @@ const AddPage = () => {
                             <option className="text-white" value="103">103</option>
                             <option className="text-white" value="Other">Other</option>
                         </select>
-                    </div>
+                    </div> */}
                     <div className="col-span-2 mx-[10%]">
                         <label htmlFor="image" className="block mb-1">Image:</label>
                         <input
@@ -158,8 +235,8 @@ const AddPage = () => {
                         <button type="submit" className="px-5 py-3 font-bold text-xl bg-red-400 rounded-xl text-white hover:bg-red-600 transition duration-300">Crea Ticket</button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
 
 
     );

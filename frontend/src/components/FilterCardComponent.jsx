@@ -1,18 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import DateSelector from './DateSelector';
-import Example from "../components/calendar";
+import axios from 'axios';
 
 const FilterCardComponent = ({ cards, setData }) => {
     // neeed to fix the xxxxxx problem
     const [title, setTitle] = useState('');
+    const [type, setType] = useState('');
     const [start, setStart] = useState('xxxx-xx-xx');
     const [end, setEnd] = useState('xxxx-xx-xx');
-    const [location, setLocation] = useState('');
+    const [building, setbuilding] = useState('');
     const [floor, setFloor] = useState('');
     const [zone, setZone] = useState('');
 
+    const [buildingOptions, setbuildingOptions] = useState([]);
+
     const handleTitleChange = (e) => {
         setTitle(e.target.value);
+    };
+
+    const handleTypeChange = (e) => {
+        setType(e.target.value);
+
     };
 
     const handleStartChange = (date) => {
@@ -29,10 +37,12 @@ const FilterCardComponent = ({ cards, setData }) => {
         }
     };
 
-    const handleLocationChange = (e) => {
-        setLocation(e.target.value);
+    const handlebuildingChange = (e) => {
+        setbuilding(e.target.value);
         setFloor('');
         setZone('');
+        console.log(floor);
+        console.log(zone);
     };
     const handleFloorChange = (e) => {
         setFloor(e.target.value);
@@ -44,6 +54,8 @@ const FilterCardComponent = ({ cards, setData }) => {
     };
 
     useEffect(() => {
+
+        console.log(type);
 
         let nwstart = start;
         let nwend = end;
@@ -58,9 +70,8 @@ const FilterCardComponent = ({ cards, setData }) => {
 
         }
 
-        if (!title && !nwstart && !nwend && !location && !floor && !zone) {
+        if (!title && !type && !nwstart && !nwend && !building && !floor && !zone) {
             setData(cards);
-            console.log(cards);
             return;
         }
 
@@ -68,9 +79,11 @@ const FilterCardComponent = ({ cards, setData }) => {
 
 
             return (
+                (!title || card.title.toLowerCase().includes(title.toLowerCase())) &&
+                (!type || card.type === type) &&
                 (!nwstart || new Date(card.startdate) >= new Date(nwstart)) &&
                 (!nwend || new Date(card.endate) <= new Date(nwend)) &&
-                (!location || card.location === location) &&
+                (!building || card.building === building) &&
                 (!floor || card.floor === floor) &&
                 (!zone || card.zone === zone)
             );
@@ -80,58 +93,93 @@ const FilterCardComponent = ({ cards, setData }) => {
 
         setData(filteredData);
 
-    }, [title, start, end, location, floor, zone]);
+    }, [title, type, start, end, building, floor, zone]);
+
+    useEffect(() => {
+        axios.get('http://localhost:5000/places', {
+            headers: {
+                accept: 'application/json',
+            },
+        })
+            .then((response) => {
+                setbuildingOptions(response.data);
+
+            })
+            .catch((error) => {
+                console.error(error);
+                alert('An error occurred. Please try again later');
+            });
+
+
+    }, []);
 
 
     return (
-        <div className='text-black *:my-5 flex flex-col justify-around items-center'>
-            <input
-                type="text"
-                placeholder="Filter by title"
-                value={title}
-                onChange={handleTitleChange}
-            />
+        <div className='text-black *:my-5 ml-5 *:font-mono flex flex-col justify-around items-center'>
+            <div className='flex flex-col justify-around'>
+                <p className='text-white font-bold'>Titolo:</p>
+                <input
+                    type="text"
+                    placeholder="es: Lampadina rotta"
+                    value={title}
+                    className='border bg-neutral-700 border-none rounded-md p-1 text-neutral-200'
+                    onChange={handleTitleChange}
+                />
+            </div>
+
+            <label>
+                <p className='text-white font-bold'>Tipologia:</p>
+                <select onChange={handleTypeChange} value={type} className={'bg-neutral-700 border-none rounded-md p-1 text-neutral-200'}>
+                    <option className='text-neutral-400' value="">Select Tipologia</option>
+                    <option value="Plumbing">Plumbing</option>
+                    <option value="Electrical">Electrical</option>
+                </select>
+            </label>
 
             <label >
-                <p className='text-white'>Start date:</p>
+                <p className='text-white font-bold'>Data Inizio:</p>
                 <DateSelector handleChange={handleStartChange} value={start} />
             </label>
 
             <label >
-                <p className='text-white'>End date:</p>
+                <p className='text-white font-bold'>Data Fine:</p>
                 <DateSelector handleChange={handleEndChange} value={end} />
 
             </label>
 
 
             <label>
-                Location:
-                <select onChange={handleLocationChange}>
-                    <option className='text-neutral-500' value="">Select Location</option>
-                    <option value="active">POVO 2</option>
-                    <option value="ITI">ITI</option>
-                    <option value="inactive">SCUOLA ECCHER</option>
-                    <option value="inactive">UFFICIO TRANSPORTI</option>
+                <p className='text-white font-bold'>Edificio:</p>
+
+                <select onChange={handlebuildingChange} value={building} className='bg-neutral-700 border-none rounded-md p-1 text-neutral-200'>
+                    <option className='text-neutral-500' value="">Select building</option>
+                    {buildingOptions.map((building, index) => (
+                        <option key={index} value={building.name}>{building.name}</option>
+                    ))}
                 </select>
             </label>
 
-            {location && <label>
-                Floor:
-                <select onChange={handleFloorChange}>
-                    <option className='text-neutral-500' value="">Select Location</option>
-                    <option value="active">Ground</option>
-                    <option value="inactive">First</option>
-                    <option value="inactive">Second</option>
+            {building && <label>
+                <p className='text-white font-bold'>Piano:</p>
+
+                <select onChange={handleFloorChange} value={floor} className='bg-neutral-700 border-none rounded-md p-1 text-neutral-200'>
+                    <option className='text-neutral-500' value="">Select Piano</option>
+                    {buildingOptions
+                        .find(b => b.name === building)?.floors.map((floor, index) => (
+                            <option key={index} value={floor.floor}>{floor.floor}</option>
+                        ))}
                 </select>
             </label>
             }
-            {location && floor && <label>
-                Zone:
-                <select onChange={handleZoneChange}>
-                    <option className='text-neutral-500' value="">Select Location</option>
-                    <option value="active">POVO 2</option>
-                    <option value="inactive">SCUOLA ECCHER</option>
-                    <option value="inactive">UFFICIO TRANSPORTI</option>
+            {building && floor && <label>
+                <p className='text-white font-bold'>Zona:</p>
+
+                <select onChange={handleZoneChange} value={zone} className='bg-neutral-700 border-none rounded-md p-1 text-neutral-200'>
+                    <option className='text-neutral-500' value="">Select Zona</option>
+                    {buildingOptions
+                        .find(b => b.name === building)?.floors.find(f => f.floor === floor)?.rooms.map((zone, index) => (
+                            <option key={index} value={zone}>{zone}</option>
+                        ))}
                 </select>
             </label>}
 

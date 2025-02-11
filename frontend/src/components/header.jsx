@@ -12,7 +12,6 @@ import {
 import { useAuth } from "../utils/AuthProvider";
 import Sidebar from "./sidebar";
 import logo from "../assets/logo-no-background.svg";
-import logo_wh from "../assets/logo-black.svg";
 
 
 
@@ -36,7 +35,7 @@ export const Header = () => {
     <>
       <header
         id="outer-container page-wrap"
-        className="z-50 bg-neutral-900 text-white py-4 px-6 shadow-md "
+        className=" bg-neutral-900 text-white py-4 px-6 shadow-md "
       >
         <nav className="flex items-center justify-between w-full">
           <div className="left flex items-center space-x-6">

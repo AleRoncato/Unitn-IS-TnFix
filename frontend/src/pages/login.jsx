@@ -25,28 +25,28 @@ const LoginForm = () => {
     }, [password]);
 
 
-    useEffect(() => {
+    // useEffect(() => {
 
-        if (firstUpdateUser.current) {
-            firstUpdateUser.current = false;
-            return;
-        }
+    //     if (firstUpdateUser.current) {
+    //         firstUpdateUser.current = false;
+    //         return;
+    //     }
 
-        validateEmail();
-    }, [email]);
+    //     validateEmail();
+    // }, [email]);
 
-    const validateEmail = () => {
-        if (!email) {
-            setEmailError("Email is required");
-            return false;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            setEmailError("Invalid email format");
-            return false;
-        } else {
-            setEmailError("");
-            return true;
-        }
-    };
+    // const validateEmail = () => {
+    //     if (!email) {
+    //         setEmailError("Email is required");
+    //         return false;
+    //     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    //         setEmailError("Invalid email format");
+    //         return false;
+    //     } else {
+    //         setEmailError("");
+    //         return true;
+    //     }
+    // };
     const validatePassword = () => {
         if (!password) {
             setPasswordError("Password is required");
@@ -58,13 +58,15 @@ const LoginForm = () => {
     };
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (validateEmail() && validatePassword()) {
-            login(email, password, () => {
-                navigate("/home");
-            });
-        }
+
+        login(email, password, () => {
+            navigate("/home/:");
+        });
+        // if (validateEmail() && validatePassword()) {
+
+        // }
     };
-    
+
     return (
         <div className="flex min-h-screen items-center justify-center bg-indigo-200 font-mono">
             <div className="border border-gray-300 bg-white/40 ring-1 ring-black/5 px-4 w-full max-w-md rounded-lg shadow-xl p-8">
@@ -77,11 +79,11 @@ const LoginForm = () => {
                         <div className={`mb-4 `}>
                             <label className="block text-sm font-medium mb-2 text-neutral-700">Email</label>
                             <input
-                                type="email"
+                                type="username"
                                 placeholder="john.doe@example.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                onBlur={validateEmail}
+                                // onBlur={validateEmail}
                                 className="w-full px-3 py-2 border rounded-lg focus:outline-none text-neutral-800 focus:ring-2 focus:ring-teal-500"
                             />
                             {emailError && <p className="text-red-500 text-xs mt-1">{emailError}</p>}

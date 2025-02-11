@@ -1,6 +1,6 @@
 {
-  "name": "tnfix",
-  "version": "1.0.0",
+  "name": "tnfixapi",
+  "version": "2.1.0",
   "main": "index.js",
   "scripts": {
     "test": "jest --setupFiles dotenv/config --detectOpenHandles --forceExit ",

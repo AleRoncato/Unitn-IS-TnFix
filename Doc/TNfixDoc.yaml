@@ -1,0 +1,168 @@
+openapi: 3.0.0
+info:
+  title: API di esempio
+  version: 1.0.0
+  description: Un esempio di API usando Swagger e Express
+servers:
+  - url: http://localhost:5000
+paths:
+  /register:
+    post:
+      summary: Registra un nuovo utente
+      tags:
+        - Utenti
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+                - role
+              properties:
+                username:
+                  type: string
+                  description: Il nome utente dell'utente
+                password:
+                  type: string
+                  description: La password dell'utente
+                role:
+                  type: string
+                  description: Il ruolo dell'utente (es. admin, user)
+      responses:
+        "201":
+          description: Utente registrato con successo
+        "400":
+          description: Richiesta non valida
+        "500":
+          description: Errore interno del server
+  /login:
+    post:
+      summary: Effettua il login di un utente
+      tags:
+        - Utenti
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: Il nome utente dell'utente
+                password:
+                  type: string
+                  description: La password dell'utente
+      responses:
+        "200":
+          description: Login effettuato con successo
+        "400":
+          description: Credenziali non valide
+        "500":
+          description: Errore interno del server
+  /tickets:
+    post:
+      summary: Creazione di un nuovo ticket
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                type:
+                  type: string
+                building:
+                  type: string
+                floor:
+                  type: string
+                room:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+      responses:
+        "201":
+          description: Ticket creato con successo
+        "500":
+          description: Errore nella creazione del ticket
+    get:
+      summary: Visualizza tutti i ticket con possibilità di filtraggio
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          description: Stato del ticket
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+          description: Data di inizio
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+          description: Data di fine
+      responses:
+        "200":
+          description: Lista dei ticket
+        "500":
+          description: Errore nel recupero dei ticket
+  /tickets/{id}:
+    put:
+      summary: Aggiornare lo stato di un ticket (solo admin)
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: ID del ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+      responses:
+        "200":
+          description: Ticket aggiornato con successo
+        "403":
+          description: Accesso negato
+        "404":
+          description: Ticket non trovato
+        "500":
+          description: Errore nell'aggiornamento del ticket
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

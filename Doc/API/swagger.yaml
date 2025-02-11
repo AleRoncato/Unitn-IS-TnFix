@@ -1,0 +1,483 @@
+openapi: 3.0.0
+info:
+  title: API TNFix
+  version: 2.2.0
+  description: API per la gestione di ticket di assistenza e utenti
+  contact:
+    name: Gianluca Campi
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+  - url: http://localhost:5000
+paths:
+  /register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                email:
+                  type: string
+                telefono:
+                  type: string
+                nome:
+                  type: string
+                cognome:
+                  type: string
+      responses:
+        '201':
+          description: User registered successfully
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+  /login:
+    post:
+      summary: Login a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+  /workers:
+    get:
+      summary: Get all workers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Workers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    nome:
+                      type: string
+                    cognome:
+                      type: string
+                    email:
+                      type: string
+                    telefono:
+                      type: string
+                    image:
+                      type: string
+                    azienda:
+                      type: string
+        '500':
+          description: Internal server error
+  /users/{UserId}:
+    delete:
+      summary: Delete a user by his ID
+      parameters:
+        - in: path
+          name: UserId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User deleted successfully
+        '404':
+          description: User not found
+        '500':
+          description: Internal server error
+  /tickets:
+    post:
+      summary: Create a new ticket
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                type:
+                  type: string
+                building:
+                  type: string
+                floor:
+                  type: string
+                room:
+                  type: string
+                description:
+                  type: string
+                image:
+                  type: string
+      responses:
+        '201':
+          description: Ticket created successfully
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+  /updates:
+    get:
+      summary: Get updates for the user
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Updates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    title:
+                      type: string
+                    type:
+                      type: string
+                    building:
+                      type: string
+                    floor:
+                      type: string
+                    room:
+                      type: string
+                    description:
+                      type: string
+                    image:
+                      type: string
+                    ticketId:
+                      type: strin
+                    state:
+                      type: string
+                    plannedDate:
+                      type: string
+                      format: date
+                    extimatedTime:
+                      type: number
+                    inizio:
+                      type: string
+                      format: date
+                    fine:
+                      type: string
+                      format: date
+                    expiresIn:
+                      type: string
+                      format: date
+                    declineReason:
+                      type: string
+                    creatore:
+                      type: string
+                    tecnicoGestore:
+                      type: string
+                    lavoratoreAssegnato:
+                      type: string
+        '403':
+          description: User not found
+        '500':
+          description: Internal server error
+  /tickets/{state}:
+    get:
+      summary: Get ticket based on the state and the user role
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: state
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updates retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    title:
+                      type: string
+                    type:
+                      type: string
+                    building:
+                      type: string
+                    floor:
+                      type: string
+                    room:
+                      type: string
+                    description:
+                      type: string
+                    image:
+                      type: string
+                    state:
+                      type: string
+                    plannedDate:
+                      type: string
+                      format: date
+                    extimatedTime:
+                      type: string
+                      format: date
+                    expiresIn:
+                      type: number
+                    inizio:
+                      type: string
+                      format: date
+                    fine:
+                      type: string
+                      format: date
+                    creatore:
+                      type: string
+                    tecnicoGestore:
+                      type: string
+                    lavoratoreAssegnato:
+                      type: string
+        '400':
+          description: Lo state è obbligatorio
+        '500':
+          description: Errore nel recupero dei ticket
+  /tickets/{id}:
+    put:
+      summary: Update a ticket by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                inizio:
+                  type: string
+                fine:
+                  type: string
+      responses:
+        '200':
+          description: Ticket updated successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Not Authorized
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nell'aggiornamento del ticket
+    delete:
+      summary: Delets a ticket by ID if not already accepted and is created by the user
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ticket eliminato con successo
+        '402':
+          description: Ticket non trovato
+        '500':
+          description: Errore durante l'eliminazione del ticket
+  /tickets/{id}/schedule:
+    put:
+      summary: Schedule a ticket by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: null
+            type: object
+            properties:
+              plannedDate:
+                type: date
+              extimatedTime:
+                type: number
+              worker:
+                type: string
+      responses:
+        '200':
+          description: Ticket scheduled successfully
+        '400':
+          description: Bad request
+        '403':
+          description: Not Authorized
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
+  /tickets/{id}/accept:
+    put:
+      summary: Accept a ticket by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ticket accepted successfully
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
+  /tickets/{id}/decline:
+    put:
+      summary: Decline a ticket by ID given a reason
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: null
+            type: object
+            properties:
+              declineReason:
+                type: string
+      responses:
+        '200':
+          description: Ticket accepted successfully
+        '405':
+          description: Ticket not found
+        '500':
+          description: Errore nella programmazione del ticket
+  /places:
+    get:
+      summary: Get all places
+      responses:
+        '200':
+          description: Places retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    _id:
+                      type: string
+                    name:
+                      type: string
+                    floors:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          piano:
+                            type: integer
+                          stanze:
+                            type: array
+                            items:
+                              type: string
+        '500':
+          description: Internal server error
+    post:
+      summary: Create a new place
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                floors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      floor:
+                        type: integer
+                      rooms:
+                        type: array
+                        items:
+                          type: string
+      responses:
+        '201':
+          description: Place created successfully
+        '400':
+          description: Bad request
+        '500':
+          description: Internal server error
+  /follows:
+    post:
+      summary: Follow a ticket
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ticketId:
+                  type: string
+      responses:
+        '201':
+          description: Follow created successfully
+        '500':
+          description: Internal server error
+tags: []

@@ -20,18 +20,18 @@ const Filter = ({ theme }) => {
         <ul className="h-full flex flex-col justify-around text-xl font-mono font-semibold">
           <li className=" flex flex-col items-center underline underline-offset-3">
             <div className="flex items-center justify-center w-full hover:text-neutral-400">
-              <Link to={"/home"}>All</Link>
+              <Link to={"/home"}>Updates</Link>
             </div>
           </li>
           <li className=" flex flex-col items-center text ">
             <div className="flex items-center justify-center w-full hover:text-neutral-400">
               <Clock className="text-white mr-3" />
-              <Link to={"/home/:#In accettazione"}>In accettazione</Link>
+              <Link to={"/home/:#In accettazione"}> In accettazione </Link>
             </div>
           </li>
           <li className=" flex flex-col items-center">
             <div className="flex items-center justify-center w-full hover:text-neutral-400">
-              <CircleDot className="text-green-500 mr-3" /> 
+              <CircleDot className="text-green-500 mr-3" />
               <Link to={"/home/:#accettati"}> Accettati </Link>
             </div>
           </li>

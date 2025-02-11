@@ -17,12 +17,17 @@ app.use(cors({ origin: "http://localhost:5173" }));
 // EFFECTIVE API //
 // ============= //
 
-const User = require("./models/Models").User; // Importa il modello User
-
+// Utils
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-
 const authenticateToken = require("./middleware/AUTH"); // Correct the import
+
+// Importa i modelli Mongoose
+const User = require("./models/Models").User;
+const Ticket = require("./models/Models").Ticket;
+const Follow = require("./models/Models").Follow;
+//const ClosedTickets = require("./models/Models").ClosedTickets;
+const Place = require("./models/Models").Place;
 
 app.get("/", (req, res) => {
   res.send("API TNFix");
@@ -62,12 +67,16 @@ app.get("/", (req, res) => {
  *       500:
  *         description: Internal server error
  */
-app.post("/register", async (req, res) => {
+app.post("/register", authenticateToken, async (req, res) => {
   const { username, password, role, email, telefono, nome, cognome } = req.body;
 
   // Verifica che tutti i campi siano forniti
   if (!username || !password || !role || !email || !nome || !cognome) {
     return res.status(400).json({ error: "Tutti i campi sono obbligatori" });
+  }
+
+  if (role != "admin") {
+    return res.status(400).json({ error: "Ruolo non valido" });
   }
 
   try {
@@ -149,6 +158,57 @@ app.post("/login", async (req, res) => {
 
 /**
  * @swagger
+ * /workers:
+ *   get:
+ *     summary: Get all workers
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Workers retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   nome:
+ *                     type: string
+ *                   cognome:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   telefono:
+ *                     type: string
+ *                   image:
+ *                     type: string
+ *                   azienda:
+ *                     type: string
+ *       500:
+ *         description: Internal server error
+ */
+app.get("/workers", authenticateToken, async (req, res) => {
+  try {
+    const workers = await User.find({ ruolo: "worker" });
+
+    const filteredWorkers = workers.map((worker) => ({
+      nome: worker.nome,
+      cognome: worker.cognome,
+      email: worker.email,
+      telefono: worker.telefono,
+      image: worker.image,
+      azienda: worker.azienda,
+    }));
+
+    res.json(filteredWorkers);
+  } catch (error) {
+    res.status(500).json({ error: "Errore nel recupero dei lavoratori" });
+  }
+});
+
+/**
+ * @swagger
  * /users/{UserId}:
  *   delete:
  *     summary: Delete a user by his ID
@@ -184,10 +244,6 @@ app.delete("/users/:userId", authenticateToken, async (req, res) => {
     res.status(500);
   }
 });
-
-const Ticket = require("./models/Models").Ticket; // Importa il modello Ticket
-const TicketInfo = require("./models/Models").TicketInfo; // Importa il modello TicketInfo
-const Follow = require("./models/Models").Follow; // Importa il modello Follow
 
 /**
  * @swagger
@@ -240,7 +296,7 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       room,
     });
 
-    if (existingTicket) {
+    if (existingTicket && existingTicket.creatore != req.user.userId) {
       // Aggiungi l'utente come follower del ticket
       const newFollow = new Follow({
         userId: req.user.userId,
@@ -250,6 +306,12 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       return res.status(201).json({
         message:
           "Ticket uguale già esistente, sei stato aggiunto come Follower.",
+        existingTicket,
+      });
+    } else if (existingTicket && existingTicket.creatore == req.user.userId) {
+      return res.status(400).json({
+        error: "Ticket uguale già esistente, non puoi creare un ticket uguale.",
+        existingTicket,
       });
     }
 
@@ -261,21 +323,12 @@ app.post("/tickets", authenticateToken, async (req, res) => {
       room,
       description,
       image,
+      creatore: req.user.userId,
     });
 
-    await newTicket.save().then((ticket) => {
-      const ticketInfo = new TicketInfo({
-        ticketId: ticket._id,
-        creatore: req.user.userId,
-      });
+    await newTicket.save();
 
-      return ticketInfo.save().then((info) => {
-        ticket.ticketInfo = info._id;
-        return ticket.save();
-      });
-    });
-
-    res.status(202).json({ message: "Ticket creato con successo." });
+    res.status(200).json({ message: "Ticket creato con successo.", newTicket });
   } catch (error) {
     res.status(500).json({ error: "Errore nella creazione del ticket." });
   }
@@ -314,25 +367,32 @@ app.post("/tickets", authenticateToken, async (req, res) => {
  *                     type: string
  *                   image:
  *                     type: string
- *                   ticketInfo:
- *                     type: object
- *                     properties:
- *                       ticketId:
- *                         type: string
- *                       creatore:
- *                         type: string
- *                       state:
- *                         type: string
- *                       plannedDate:
- *                         type: string
- *                       inizio:
- *                         type: string
- *                       fine:
- *                         type: string
- *                       tecnicoGestore:
- *                         type: string
- *                       lavoratoreAssegnato:
- *                         type: string
+ *                   ticketId:
+ *                       type: strin
+ *                   state:
+ *                       type: string
+ *                   plannedDate:
+ *                       type: string
+ *                       format: date
+ *                   extimatedTime:
+ *                       type: number
+ *                   inizio:
+ *                       type: string
+ *                       format: date
+ *                   fine:
+ *                       type: string
+ *                       format: date
+ *                   expiresIn:
+ *                       type: string
+ *                       format: date
+ *                   declineReason:
+ *                       type: string
+ *                   creatore:
+ *                       type: string
+ *                   tecnicoGestore:
+ *                       type: string
+ *                   lavoratoreAssegnato:
+ *                       type: string
  *       403:
  *         description: User not found
  *       500:
@@ -347,40 +407,47 @@ app.get("/updates", authenticateToken, async (req, res) => {
 
     const tickets = await Ticket.find({
       updatedAt: { $gt: user.last_action },
-    }).populate("ticketInfo");
+    });
 
     if (req.user.role === "tecnico") {
       const extraTickets = await Ticket.find({
-        "ticketInfo.tecnicoGestore": req.user.userId,
-        "ticketInfo.state": "Confermare",
-      }).populate("ticketInfo");
+        state: "In accettazione",
+        tecnicoGestore: req.user.userId,
+      });
 
       const acceptTickets = await Ticket.find({
-        "ticketInfo.state": "In accettazione",
-      }).populate("ticketInfo");
+        state: "In accettazione",
+      });
 
       const filteredTickets = tickets.filter(
         (ticket) =>
-          ticket.ticketInfo.tecnicoGestore == req.user.userId &&
-          ticket.ticketInfo.state != "Confermare"
+          ticket.tecnicoGestore == req.user.userId &&
+          ticket.state != "Confermare"
       );
 
       res.json([...extraTickets, ...filteredTickets, ...acceptTickets]);
     } else if (req.user.role === "worker") {
       const filteredWorkerTickets = tickets.filter(
-        (ticket) => ticket.ticketInfo.lavoratoreAssegnato == req.user.userId
+        (ticket) => ticket.lavoratoreAssegnato == req.user.userId
       );
 
       res.json(filteredWorkerTickets);
-    } else {
+    }
+    // USER ROLE PART
+    else {
       const userTickets = tickets.filter(
-        (ticket) => ticket.ticketInfo.creatore == req.user.userId
+        (ticket) => ticket.creatore == req.user.userId
       );
 
       const followedTickets = await Follow.find({
         user: req.user.userId,
-        "ticket.updatedAt": { $gt: user.last_action },
       }).populate("ticket");
+
+      followedTickets.forEach((f) => {
+        if (f.ticket.updatedAt > user.last_action) {
+          userTickets.push(f.ticket);
+        }
+      });
 
       const allTickets = [
         ...userTickets,
@@ -436,25 +503,28 @@ app.get("/updates", authenticateToken, async (req, res) => {
  *                     type: string
  *                   image:
  *                     type: string
- *                   ticketInfo:
- *                     type: object
- *                     properties:
- *                       ticketId:
- *                         type: string
- *                       creatore:
- *                         type: string
- *                       state:
- *                         type: string
- *                       plannedDate:
- *                         type: string
- *                       inizio:
- *                         type: string
- *                       fine:
- *                         type: string
- *                       tecnicoGestore:
- *                         type: string
- *                       lavoratoreAssegnato:
- *                         type: string
+ *                   state:
+ *                     type: string
+ *                   plannedDate:
+ *                     type: string
+ *                     format: date
+ *                   extimatedTime:
+ *                     type: string
+ *                     format: date
+ *                   expiresIn:
+ *                     type: number
+ *                   inizio:
+ *                     type: string
+ *                     format: date
+ *                   fine:
+ *                     type: string
+ *                     format: date
+ *                   creatore:
+ *                     type: string
+ *                   tecnicoGestore:
+ *                     type: string
+ *                   lavoratoreAssegnato:
+ *                     type: string
  *       400:
  *         description: Lo state è obbligatorio
  *       500:
@@ -476,13 +546,13 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
     try {
       let tickets = await Ticket.find({
         state: state,
-      }).populate("ticketInfo");
+      });
 
       if (state != "In accettazione") {
         tickets = tickets.filter(
           (ticket) =>
-            ticket.ticketInfo.tecnicoGestore == req.user.userId ||
-            ticket.ticketInfo.lavoratoreAssegnato == req.user.userId
+            ticket.tecnicoGestore == req.user.userId ||
+            ticket.lavoratoreAssegnato == req.user.userId
         );
       }
 
@@ -505,14 +575,15 @@ app.get("/tickets/:state", authenticateToken, async (req, res) => {
       }).populate("ticket");
 
       const createdTickets = await Ticket.find({
-        "ticketInfo.creatore": req.user.userId,
+        creatore: req.user.userId,
         state: state,
-      }).populate("ticketInfo");
+      });
 
       const allTickets = [
         ...followedTickets.map((f) => f.ticket),
         ...createdTickets,
       ];
+
       const paginatedTickets = allTickets.slice(skip, skip + limit);
 
       const user = await User.findById(req.user.userId);
@@ -575,23 +646,15 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
   const { state, inizio, fine } = req.body;
 
   try {
-    if (req.user.role != "user") {
+    if (req.user.role === "user") {
       return res.status(403).json({ error: "Non sei autorizzato" });
     }
 
-    const ticket = await Ticket.findOne({
-      _id: id,
+    const ticket = await Ticket.findById({
+      id,
     });
 
     if (!ticket) {
-      return res.status(405).json({ error: "Ticket non trovato" });
-    }
-
-    const ticketInfo = await TicketInfo.findOne({
-      ticketId: id,
-    });
-
-    if (!ticketInfo) {
       return res.status(405).json({ error: "Ticket non trovato" });
     }
 
@@ -599,26 +662,27 @@ app.put("/tickets/:id", authenticateToken, async (req, res) => {
       if (!inizio)
         return res.status(400).json({ error: "L'inizio è obbligatorio" });
 
-      ticketInfo.inizio = inizio;
-      ticketInfo.state = "In risoluzione";
+      ticket.inizio = inizio;
+      ticket.state = "In risoluzione";
     }
 
     if (state == "Closed") {
-      if (!fine)
-        return res.status(400).json({ error: "La fine è obbligatoria" });
+      if (ticket.inizio == null || ticket.inizio == undefined || !fine) {
+        return res.status(400).json({ error: "La inizio e fine obbligatori" });
+      }
 
-      ticketInfo.fine = fine;
+      ticket.fine = fine;
 
       if (req.user.role === "worker") {
-        ticketInfo.state = "Confermare";
+        ticket.state = "Confermare";
       } else {
-        ticketInfo.state = "Closed";
+        ticket.state = "Closed";
       }
     }
 
-    await ticketInfo.save();
+    await ticket.save();
 
-    res.json({ message: "Ticket updated with success." });
+    res.json({ message: "Ticket updated with success." }, ticket);
   } catch (error) {
     res.status(500).json({ error: "Errore nell'aggiornamento del ticket" });
   }
@@ -678,25 +742,29 @@ app.put("/tickets/:id/schedule", authenticateToken, async (req, res) => {
       return res.status(403).json({ error: "Ticket non trovato" });
     }
 
-    const ticketInfo = await TicketInfo.findOne({
-      ticketId: id,
-    });
-
     if (!plannedDate)
       return res
         .status(400)
         .json({ error: "La data programmata è obbligatoria" });
 
-    ticketInfo.plannedDate = plannedDate;
-    ticketInfo.extimatedTime = extimatedTime;
+    ticket.plannedDate = plannedDate;
+    ticket.extimatedTime = extimatedTime;
 
-    if (worker) ticketInfo.lavoratoreAssegnato = worker;
+    if (worker) ticket.lavoratoreAssegnato = worker;
 
-    ticketInfo.state = "Programmato";
+    ticket.state = "Programmato";
 
-    await ticketInfo.save();
+    try {
+      await ticket.save();
+    } catch (error) {
+      res
+        .status(500)
+        .json({ error: "Errore nella formattazione di qualche input." });
+    }
 
-    res.json({ message: "Ticket programmato con successo" });
+    res
+      .status(200, { message: "Ticket programmato con successo" })
+      .json(ticket);
   } catch (error) {
     res.status(500).json({ error: "Errore nella programmazione del ticket" });
   }
@@ -737,16 +805,12 @@ app.put("/tickets/:id/accept", authenticateToken, async (req, res) => {
       return res.status(405).json({ error: "Ticket non trovato" });
     }
 
-    const ticketInfo = await TicketInfo.findOne({
-      ticketId: id,
-    });
+    ticket.state = "Accettato";
+    ticket.tecnicoGestore = req.user.userId;
 
-    ticketInfo.state = "Accettato";
-    ticketInfo.tecnicoGestore = req.user.userId;
+    await ticket.save();
 
-    await ticketInfo.save();
-
-    res.json({ message: "Ticket accettato con successo" });
+    res.status(200, { message: "Ticket accettato con successo" }).json(ticket);
   } catch (error) {
     res.status(500).json({ error: "Errore nell'accettazione del ticket" });
   }
@@ -797,19 +861,15 @@ app.put("/tickets/:id/decline", authenticateToken, async (req, res) => {
       return res.status(403).json({ error: "Ticket non trovato" });
     }
 
-    const ticketInfo = await TicketInfo.findOne({
-      ticketId: id,
-    });
+    ticket.state = "Rifiutato";
+    ticket.tecnicoGestore = req.user.userId;
+    ticket.declineReason = declineReason;
 
-    ticketInfo.state = "Rifiutato";
-    ticketInfo.tecnicoGestore = req.user.userId;
-    ticketInfo.declineReason = declineReason;
+    ticket.expiresIn = Date.now() + 1000 * 60 * 60 * 24 * 14; // 14 days
 
-    ticketInfo.expiresIn = Date.now() + 1000 * 60 * 60 * 24 * 14; // 14 days
+    await ticket.save();
 
-    await ticketInfo.save();
-
-    res.json({ message: "Ticket rifiutato con successo" });
+    res.status(200, { message: "Ticket rifiutato con successo" }).json(ticket);
   } catch (error) {
     res.status(500).json({ error: "Errore nel rifiuto del ticket" });
   }
@@ -831,7 +891,7 @@ app.put("/tickets/:id/decline", authenticateToken, async (req, res) => {
  *     responses:
  *       200:
  *         description: Ticket eliminato con successo
- *       400:
+ *       402:
  *         description: Ticket non trovato
  *       500:
  *         description: Errore durante l'eliminazione del ticket
@@ -843,16 +903,15 @@ app.delete("/tickets/:id", authenticateToken, async (req, res) => {
   try {
     const ticket = await Ticket.findOne({
       _id: id,
-      "ticketInfo.creatore": user,
+      creatore: user,
       state: "In accettazione",
-    }).populate("ticketInfo");
+    });
 
     if (!ticket) {
-      return res.status(404).json({ error: "Ticket non trovato" });
+      return res.status(402).json({ error: "Ticket non trovato" });
     }
 
-    ticketInfo = await TicketInfo.findByIdAndDelete(ticket.ticketInfo);
-    await ticket.delete();
+    await Ticket.findByIdAndDelete(id);
 
     res.json({ message: "Ticket eliminato con successo" });
   } catch (error) {
@@ -860,7 +919,7 @@ app.delete("/tickets/:id", authenticateToken, async (req, res) => {
   }
 });
 
-const Place = require("./models/Models").Place; // Importa il modello Place
+// Importa il modello Place
 
 /**
  * @swagger
@@ -999,53 +1058,6 @@ app.post("/follows", authenticateToken, async (req, res) => {
     res.status(201).json(newFollow);
   } catch (error) {
     res.status(500).json({ error: "Errore nel seguire il ticket" });
-  }
-});
-
-// TESTING ONLY
-
-app.put("/test", authenticateToken, async (req, res) => {
-  const user = req.user.role;
-  if (user == "admin") {
-    await ticketInfo.deleteMany({}, (err) => {
-      if (err) {
-        res
-          .status(500)
-          .json({ error: "Errore nella cancellazione dei ticket" });
-      } else {
-        res.status(200).json({ message: "Ticket eliminati con successo" });
-      }
-    });
-
-    await ticket.deleteMany({}, (err) => {
-      if (err) {
-        res
-          .status(500)
-          .json({ error: "Errore nella cancellazione dei ticket" });
-      } else {
-        res.status(200).json({ message: "Ticket eliminati con successo" });
-      }
-    });
-
-    await follow.deleteMany({}, (err) => {
-      if (err) {
-        res
-          .status(500)
-          .json({ error: "Errore nella cancellazione dei Follow" });
-      } else {
-        res.status(200).json({ message: "Follow eliminati con successo" });
-      }
-    });
-
-    await places.deleteMany({}, (err) => {
-      if (err) {
-        res
-          .status(500)
-          .json({ error: "Errore nella cancellazione dei places" });
-      } else {
-        res.status(200).json({ message: "Places eliminati con successo" });
-      }
-    });
   }
 });
 

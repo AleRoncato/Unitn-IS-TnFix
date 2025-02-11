@@ -1,9 +1,19 @@
 // Importa mongoose
 const mongoose = require("mongoose");
 
+// Middleware per aggiornare `updatedAt` prima di salvare
+
 // Definizione del modello Ticket
 const TicketSchema = new mongoose.Schema(
   {
+    creatore: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    tecnicoGestore: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    lavoratoreAssegnato: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
     title: { type: String, required: true },
     type: { type: String, required: true },
     building: { type: String, required: true },
@@ -12,25 +22,6 @@ const TicketSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     image: { type: [String], default: [] },
 
-    ticketInfo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "TicketInfo",
-      required: false,
-    }, // Link to TicketInfo
-
-    createdAt: { type: Date, default: Date.now }, // When the ticket was created
-  },
-  { timestamps: true }
-);
-
-// Definizione del modello TicketInfo
-const TicketInfoSchema = new mongoose.Schema(
-  {
-    ticketId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Ticket",
-      required: true,
-    },
     state: {
       type: String,
       enum: [
@@ -52,21 +43,16 @@ const TicketInfoSchema = new mongoose.Schema(
 
     inizio: { type: Date, default: null },
     fine: { type: Date, default: null },
-    creatore: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    tecnicoGestore: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    lavoratoreAssegnato: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    expiresIn: { type: Date, default: null }, // When the ticket expires
 
     updatedAt: { type: Date, default: Date.now }, // When the ticket was last updated
+    createdAt: { type: Date, default: Date.now }, // When the ticket was created
   },
   { timestamps: true }
 );
 
-// Middleware per aggiornare `updatedAt` prima di salvare
-TicketInfoSchema.pre("save", function (next) {
+TicketSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
@@ -85,6 +71,8 @@ const UserSchema = new mongoose.Schema(
     telefono: { type: String },
     nome: { type: String, required: true },
     cognome: { type: String, required: true },
+    image: { type: String, default: "" },
+    azienda: { type: String, default: "" },
     last_action: { type: Date, default: Date.now }, //Updated when the user leaves the updates page
   },
   { timestamps: true }
@@ -123,10 +111,10 @@ const FollowSchema = new mongoose.Schema(
 
 // Creazione dei modelli
 const Ticket = mongoose.model("Ticket", TicketSchema);
-const TicketInfo = mongoose.model("TicketInfo", TicketInfoSchema);
+const ClosedTickets = mongoose.model("ClosedTickets", TicketSchema);
 const User = mongoose.model("User", UserSchema);
 const Place = mongoose.model("Place", PlaceSchema);
 const Follow = mongoose.model("Follow", FollowSchema);
 
 // Esportazione dei modelli
-module.exports = { Ticket, TicketInfo, User, Place, Follow };
+module.exports = { Ticket, ClosedTickets, User, Place, Follow };

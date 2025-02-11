@@ -66,6 +66,35 @@ paths:
           description: Bad request
         '500':
           description: Internal server error
+  /workers:
+    get:
+      summary: Get all workers
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Workers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    nome:
+                      type: string
+                    cognome:
+                      type: string
+                    email:
+                      type: string
+                    telefono:
+                      type: string
+                    image:
+                      type: string
+                    azienda:
+                      type: string
+        '500':
+          description: Internal server error
   /users/{UserId}:
     delete:
       summary: Delete a user by his ID
@@ -146,25 +175,32 @@ paths:
                       type: string
                     image:
                       type: string
-                    ticketInfo:
-                      type: object
-                      properties:
-                        ticketId:
-                          type: string
-                        creatore:
-                          type: string
-                        state:
-                          type: string
-                        plannedDate:
-                          type: string
-                        inizio:
-                          type: string
-                        fine:
-                          type: string
-                        tecnicoGestore:
-                          type: string
-                        lavoratoreAssegnato:
-                          type: string
+                    ticketId:
+                      type: strin
+                    state:
+                      type: string
+                    plannedDate:
+                      type: string
+                      format: date
+                    extimatedTime:
+                      type: number
+                    inizio:
+                      type: string
+                      format: date
+                    fine:
+                      type: string
+                      format: date
+                    expiresIn:
+                      type: string
+                      format: date
+                    declineReason:
+                      type: string
+                    creatore:
+                      type: string
+                    tecnicoGestore:
+                      type: string
+                    lavoratoreAssegnato:
+                      type: string
         '403':
           description: User not found
         '500':
@@ -206,25 +242,28 @@ paths:
                       type: string
                     image:
                       type: string
-                    ticketInfo:
-                      type: object
-                      properties:
-                        ticketId:
-                          type: string
-                        creatore:
-                          type: string
-                        state:
-                          type: string
-                        plannedDate:
-                          type: string
-                        inizio:
-                          type: string
-                        fine:
-                          type: string
-                        tecnicoGestore:
-                          type: string
-                        lavoratoreAssegnato:
-                          type: string
+                    state:
+                      type: string
+                    plannedDate:
+                      type: string
+                      format: date
+                    extimatedTime:
+                      type: string
+                      format: date
+                    expiresIn:
+                      type: number
+                    inizio:
+                      type: string
+                      format: date
+                    fine:
+                      type: string
+                      format: date
+                    creatore:
+                      type: string
+                    tecnicoGestore:
+                      type: string
+                    lavoratoreAssegnato:
+                      type: string
         '400':
           description: Lo state è obbligatorio
         '500':
@@ -277,7 +316,7 @@ paths:
       responses:
         '200':
           description: Ticket eliminato con successo
-        '400':
+        '402':
           description: Ticket non trovato
         '500':
           description: Errore durante l'eliminazione del ticket
